@@ -1,231 +1,321 @@
-# Rust/crossterm-rs
+# Crossterm-Kotlin Porting Guide
 
-In the tmp/crossterm-rs folder where the upstream Rust code lives for reference.
+Upstream Rust source is in `tmp/crossterm-rs/` for reference.
 
-## Kotlin Porting Guidelines
+---
 
-### Semantic Parity (The "Dishonest Code" Rule)
-- **Rule:** Port the *intent* and *behavior* of the code, not just the syntax.
-- **Context:** Rust's `Display` trait often implies specific formatting contracts (e.g., ANSI codes, truncation, padding) that are critical for terminal output.
-- **Warning:** Do **not** oversimplify `impl Display` to a simple `toString()` that returns a constant or a raw value if the original code performed formatting.
-    - *Bad Example:* Replacing a `Display` impl that writes ANSI sequences with `fun toString() = "RESET"`.
-    - *Good Example:* Faithfully reproducing the ANSI escape sequence generation logic.
-- **Action:** When porting `Display` or `Debug`, check if the Rust code does more than just return a field. If so, the Kotlin `toString()` (or a helper method) must replicate that logic.
+## CRITICAL: Folder Structure Must Mirror Packages
 
-### Research First
-- **Rule:** Do not guess at the behavior of Rust functions or traits.
-- **Action:** Use the browser to look up the official Rust documentation if you are not 100% sure of the semantics.
-- **Context:** Rust's type system and traits often carry subtle behaviors that are not obvious from the function signature alone.
+**The Kotlin folder structure MUST mirror the package hierarchy exactly.**
 
-### Provenance Tracking (REQUIRED)
+### Rust → Kotlin Mapping
 
-**Every ported Kotlin file MUST include a port-lint header at the top:**
+| Rust Path | Kotlin Path | Package |
+|-----------|-------------|---------|
+| `src/event.rs` | `commonMain/src/event/Event.kt` | `io.github.kotlinmania.crossterm.event` |
+| `src/event/filter.rs` | `commonMain/src/event/Filter.kt` | `io.github.kotlinmania.crossterm.event` |
+| `src/event/sys/unix/parse.rs` | `nativeMain/src/event/sys/unix/Parse.kt` | `io.github.kotlinmania.crossterm.event.sys.unix` |
+| `src/cursor.rs` | `commonMain/src/cursor/Cursor.kt` | `io.github.kotlinmania.crossterm.cursor` |
+| `src/cursor/sys/unix.rs` | `nativeMain/src/cursor/sys/Unix.kt` | `io.github.kotlinmania.crossterm.cursor.sys` |
+| `src/style.rs` | `commonMain/src/style/Style.kt` | `io.github.kotlinmania.crossterm.style` |
+| `src/style/types/color.rs` | `commonMain/src/style/types/Color.kt` | `io.github.kotlinmania.crossterm.style.types` |
+| `src/terminal.rs` | `commonMain/src/terminal/Terminal.kt` | `io.github.kotlinmania.crossterm.terminal` |
+| `src/command.rs` | `commonMain/src/Command.kt` | `io.github.kotlinmania.crossterm` |
+
+### Rules
+
+1. **Package = folder path**: `io.github.kotlinmania.crossterm.event.sys.unix` → `commonMain/src/event/sys/unix/`
+2. **Platform-specific code**:
+   - Common (all platforms): `commonMain/src/`
+   - Native (macOS/Linux/Windows): `nativeMain/src/`
+   - Unix-only: `unixMain/src/` (if needed)
+   - Windows-only: `mingwMain/src/` (if needed)
+3. **File naming**: Rust `snake_case.rs` → Kotlin `PascalCase.kt`
+4. **One primary type per file**: Match Rust's module structure
+
+---
+
+## REQUIRED: Port-Lint Provenance Headers
+
+**Every Kotlin file MUST have a port-lint header as the FIRST line:**
 
 ```kotlin
-// port-lint: source <relative-path-to-rust-file>
-package io.github.kotlinmania.crossterm.module
+// port-lint: source <path-relative-to-src/>
+package io.github.kotlinmania.crossterm.<module>
 ```
 
-**Examples:**
+### Examples
+
 ```kotlin
 // port-lint: source event.rs
 package io.github.kotlinmania.crossterm.event
 
-// port-lint: source terminal.rs
-package io.github.kotlinmania.crossterm.terminal
+// port-lint: source event/filter.rs
+package io.github.kotlinmania.crossterm.event
 
-// port-lint: source cursor.rs
-package io.github.kotlinmania.crossterm.cursor
+// port-lint: source event/sys/unix/parse.rs
+package io.github.kotlinmania.crossterm.event.sys.unix
+
+// port-lint: source style/types/color.rs
+package io.github.kotlinmania.crossterm.style.types
+
+// port-lint: source terminal/sys/unix.rs
+package io.github.kotlinmania.crossterm.terminal.sys
 ```
 
-**Purpose:**
-- Enables accurate AST comparison and similarity scoring
-- Makes file matching deterministic (no heuristic guessing)
-- Supports documentation coverage analysis
-- Tracks which Rust file each Kotlin port came from
+### Why This Matters
 
-**Rules:**
-1. Header must appear in the first 50 lines (conventionally first line)
-2. Path is relative to crossterm `src/` root
-3. Use exact path including subdirectories (e.g., `event/sys/unix/parse.rs`)
-4. Header is case-insensitive but prefer lowercase
+- **AST tool tracking**: The tool matches files by header first
+- **Verification**: `ast_distance --deep` shows "Matched by header: X / Y"
+- **Swarm coordination**: Prevents duplicate work
+- **Provenance**: Know exactly which Rust file each Kotlin file came from
 
-**Verification:**
-The AST distance tool will match files by port-lint header first, then fall back to name-based heuristics. Check coverage with:
+### Verification Command
+
 ```bash
+cd /Volumes/stuff/Projects/kotlinmania/crossterm-kotlin
 ./tools/ast_distance/build/ast_distance --deep tmp/crossterm-rs/src rust commonMain/src kotlin
-# Shows "Matched by header: X / Y" statistics
 ```
 
 ---
 
-## AST Distance Tool
+## Documentation Requirements
 
-A vendored cross-language AST comparison tool for analyzing port progress and identifying priority files. **Integrated with port-lint provenance tracking.**
+**Port ALL documentation from Rust to Kotlin KDoc format.**
 
-### Location
-```
-tools/ast_distance/
-├── CMakeLists.txt
-├── README.md
-├── PORT_LINT_TESTS.md  # Test results and examples
-├── include/
-│   ├── ast_parser.hpp      # Tree-sitter parsing for Rust/Kotlin/C++
-│   ├── codebase.hpp        # Directory scanning, dependency graphs, matching
-│   ├── imports.hpp         # Import/include extraction, package detection
-│   ├── node_types.hpp      # Normalized AST node type mappings
-│   ├── port_lint.hpp       # Port-lint header extraction and matching
-│   ├── similarity.hpp      # Cosine similarity, combined scoring
-│   └── tree.hpp            # Tree data structure
-└── src/
-    ├── main.cpp            # CLI entry point
-    ├── ast_parser.cpp
-    ├── ast_normalizer.cpp
-    └── similarity.cpp
+### Rust → Kotlin Doc Conversion
+
+```rust
+/// A command that moves the cursor to the specified position.
+///
+/// # Arguments
+///
+/// * `column` - The column (0-indexed)
+/// * `row` - The row (0-indexed)
+///
+/// # Example
+///
+/// ```rust
+/// use crossterm::cursor::MoveTo;
+/// println!("{}", MoveTo(10, 5));
+/// ```
+pub struct MoveTo(pub u16, pub u16);
 ```
 
-### Build
-```bash
-cd tools/ast_distance
-mkdir -p build && cd build
-cmake .. && make -j8
+Becomes:
+
+```kotlin
+/**
+ * A command that moves the cursor to the specified position.
+ *
+ * @param column The column (0-indexed)
+ * @param row The row (0-indexed)
+ *
+ * Example:
+ * ```kotlin
+ * import io.github.kotlinmania.crossterm.cursor.MoveTo
+ * print(MoveTo(10u, 5u).ansiString())
+ * ```
+ */
+data class MoveTo(val column: UShort, val row: UShort) : Command
 ```
 
-### Commands
+### Documentation Checklist
 
-**Analyze this project (Rust → Kotlin):**
-```bash
-./ast_distance --deep tmp/crossterm-rs/src rust commonMain/src kotlin
+- [ ] Module-level docs (top of file)
+- [ ] All public types (classes, objects, enums, sealed classes)
+- [ ] All public functions/methods
+- [ ] All public properties
+- [ ] Examples where the Rust has them
+- [ ] Convert Rust doc tests to Kotlin examples
+
+---
+
+## Semantic Parity Rules
+
+### The "Dishonest Code" Rule
+
+Port the *intent* and *behavior*, not just syntax.
+
+**Bad:**
+```kotlin
+// Rust had: impl Display for ResetColor { fn fmt(..) { write!(f, "\x1B[0m") } }
+// DON'T DO THIS:
+data object ResetColor {
+    override fun toString() = "ResetColor"  // WRONG!
+}
 ```
 
-This will:
-1. Match files by `// port-lint: source` header (highest priority)
-2. Fall back to legacy `Transliterated from:` headers
-3. Use name-based heuristics for unmatched files
-4. Compute AST similarity scores for all matches
-5. Report statistics: "Matched by header: X / Y"
-
-**Check what's missing:**
-```bash
-./ast_distance --missing tmp/crossterm-rs/src rust commonMain/src kotlin
+**Good:**
+```kotlin
+data object ResetColor : Command {
+    override fun writeAnsi(writer: Appendable) {
+        writer.append("\u001B[0m")  // Correct ANSI sequence
+    }
+}
 ```
 
-**Compare two files directly:**
-```bash
-./ast_distance tmp/crossterm-rs/src/event.rs commonMain/src/Event.kt
-```
+### Research First
 
-**Dump AST structure:**
-```bash
-./ast_distance --dump <file> <rust|kotlin>
-```
-
-### Output Interpretation
-
-The `--deep` command outputs:
-- **Matched files** with similarity scores (0.0–1.0)
-- **Priority score** = dependents × (1 - similarity) — high priority = many dependents + low similarity
-- **Incomplete ports** (similarity < 60%)
-- **Missing files** not yet ported
-
-Similarity thresholds:
-- `> 0.85` — Excellent port, likely complete
-- `0.60–0.85` — Good port, may need refinement
-- `0.40–0.60` — Partial port, significant gaps
-- `< 0.40` — Stub or very different implementation
+- Don't guess Rust trait behavior
+- Look up `std::` types in Rust docs
+- Check bitflags behavior for flag types
+- Verify ANSI escape sequences
 
 ---
 
 ## Swarm Task Management
 
-The AST distance tool includes a task assignment system for coordinating multiple agents porting files in parallel.
-
 ### Initialize Tasks
 
-Generate a task file from missing/incomplete ports:
 ```bash
-./ast_distance --init-tasks tmp/crossterm-rs/src rust commonMain/src kotlin tasks.json AGENTS.md
+cd /Volumes/stuff/Projects/kotlinmania/crossterm-kotlin
+./tools/ast_distance/build/ast_distance --init-tasks tmp/crossterm-rs/src rust commonMain/src kotlin tasks.json AGENTS.md
 ```
 
-### View Task Status
+### Swarm Agent Workflow
 
-```bash
-./ast_distance --tasks tasks.json
+Each agent follows this loop:
+
+```
+1. GET ASSIGNMENT
+   ./tools/ast_distance/build/ast_distance --assign tasks.json <agent-id>
+
+2. READ SOURCE
+   Read the Rust file at the path shown
+
+3. CREATE KOTLIN FILE
+   - Create proper folder structure matching package
+   - Add port-lint header as FIRST line
+   - Port all types, functions, and docs
+
+4. VERIFY
+   ./tools/ast_distance/build/ast_distance tmp/crossterm-rs/src/<file>.rs commonMain/src/<path>/<File>.kt
+   Target: >= 0.85 similarity
+
+5. COMPLETE
+   ./tools/ast_distance/build/ast_distance --complete tasks.json <qualified-name>
+
+6. REPEAT from step 1
 ```
 
-### Assign a Task (for Swarm Agents)
+### Task Commands
 
-Each agent requests the next highest-priority unassigned task:
 ```bash
-./ast_distance --assign tasks.json agent-001
+# View all tasks
+./tools/ast_distance/build/ast_distance --tasks tasks.json
+
+# Assign next task to an agent
+./tools/ast_distance/build/ast_distance --assign tasks.json agent-001
+
+# Mark task complete
+./tools/ast_distance/build/ast_distance --complete tasks.json event.filter
+
+# Release task back to pool (if agent can't finish)
+./tools/ast_distance/build/ast_distance --release tasks.json event.filter
 ```
-
-This command:
-- Assigns the highest-priority pending task (by dependent count)
-- Prevents duplicate assignments (one task per agent)
-- Outputs complete porting instructions including AGENTS.md guidelines
-- Updates the task file with assignment timestamp
-
-### Complete a Task
-
-After successfully porting a file:
-```bash
-./ast_distance --complete tasks.json event
-```
-
-### Release a Task
-
-If an agent cannot complete a task, release it back to pending:
-```bash
-./ast_distance --release tasks.json event
-```
-
-### Task Workflow for Swarm Agents
-
-1. **Get assignment**: `ast_distance --assign tasks.json <agent-id>`
-2. **Read source file** at the path shown
-3. **Create target file** with port-lint header
-4. **Transliterate** following the guidelines above
-5. **Verify**: `ast_distance <source.rs> rust <target.kt> kotlin` (aim for >= 0.85 similarity)
-6. **Complete**: `ast_distance --complete tasks.json <source_qualified>`
-7. **Repeat** from step 1
 
 ---
 
-## Crossterm-Specific Notes
+## Type Mapping Reference
 
-### Module Structure
+### Primitives
 
-The Rust crossterm crate has this structure:
-- `event.rs` + `event/` - Event types and reading (KeyEvent, MouseEvent, etc.)
-- `terminal.rs` + `terminal/` - Terminal control (raw mode, alternate screen)
-- `cursor.rs` + `cursor/` - Cursor movement and visibility
-- `style.rs` + `style/` - Colors and text attributes
-- `command.rs` - Command trait for ANSI sequence generation
+| Rust | Kotlin |
+|------|--------|
+| `u8` | `UByte` |
+| `u16` | `UShort` |
+| `u32` | `UInt` |
+| `u64` | `ULong` |
+| `i8` | `Byte` |
+| `i16` | `Short` |
+| `i32` | `Int` |
+| `i64` | `Long` |
+| `char` | `Char` |
+| `bool` | `Boolean` |
+| `String` | `String` |
+| `&str` | `String` |
 
-### Platform-Specific Code
+### Common Patterns
 
-Crossterm has platform-specific implementations in `sys/` subdirectories:
-- `event/sys/unix/` - Unix event reading (termios, etc.)
-- `event/sys/windows/` - Windows console API
-- `terminal/sys/unix.rs` - Unix terminal control
-- `terminal/sys/windows.rs` - Windows terminal control
+| Rust | Kotlin |
+|------|--------|
+| `pub enum Foo { A, B(u8) }` | `sealed class Foo { data object A : Foo(); data class B(val value: UByte) : Foo() }` |
+| `pub struct Bar { x: u16 }` | `data class Bar(val x: UShort)` |
+| `impl Default for Foo` | `companion object { fun default(): Foo = ... }` |
+| `impl Display for Foo` | `override fun toString(): String` or `fun writeAnsi(w: Appendable)` |
+| `bitflags! { struct Flags: u8 { ... } }` | `value class Flags(val bits: UByte) { companion object { val FLAG_A = Flags(0x01u) } }` |
+| `Option<T>` | `T?` |
+| `Result<T, E>` | `Result<T>` or sealed class |
+| `Vec<T>` | `List<T>` or `MutableList<T>` |
+| `HashMap<K, V>` | `Map<K, V>` or `MutableMap<K, V>` |
 
-For Kotlin Multiplatform:
-- Common code goes in `commonMain/src/`
-- Unix-specific code goes in `nativeMain/src/` (using POSIX cinterop)
-- Windows-specific code would go in `mingwMain/src/` if needed
+### ANSI Sequences
 
-### ANSI Escape Sequences
+```kotlin
+// ESC character
+const val ESC = "\u001B"
 
-Most crossterm commands generate ANSI escape sequences. These are portable across platforms when writing to stdout. The Kotlin port should:
-1. Implement `Command` interface with `writeAnsi(Appendable)` method
-2. Generate the same ANSI sequences as the Rust original
-3. Use `\u001B` (ESC) for escape character, not `\x1B`
+// CSI (Control Sequence Introducer)
+const val CSI = "\u001B["
 
-### Testing
+// Common sequences
+"${CSI}H"        // Move to home
+"${CSI}2J"       // Clear screen
+"${CSI}?25h"     // Show cursor
+"${CSI}?25l"     // Hide cursor
+"${CSI}?1049h"   // Enter alternate screen
+"${CSI}?1049l"   // Leave alternate screen
+```
 
-Since this is a terminal library, many features can't be easily unit tested. Focus on:
-- ANSI sequence generation (can be tested by checking output strings)
-- Event parsing (can be tested with mock input)
-- Type conversions and data structures
+---
+
+## Project Structure
+
+```
+crossterm-kotlin/
+├── AGENTS.md                    # This file
+├── README.md
+├── build.gradle.kts
+├── settings.gradle.kts
+├── commonMain/src/              # Cross-platform code
+│   ├── Command.kt               # Base Command interface
+│   ├── cursor/                  # Cursor module
+│   │   └── Cursor.kt
+│   ├── event/                   # Event module
+│   │   ├── Event.kt
+│   │   ├── Filter.kt
+│   │   └── ...
+│   ├── style/                   # Style module
+│   │   ├── Style.kt
+│   │   └── types/
+│   │       ├── Color.kt
+│   │       └── Attribute.kt
+│   └── terminal/                # Terminal module
+│       └── Terminal.kt
+├── nativeMain/src/              # Native-specific (POSIX)
+│   ├── event/sys/unix/
+│   │   └── Parse.kt
+│   └── terminal/sys/
+│       └── Unix.kt
+├── mingwMain/src/               # Windows-specific
+│   └── ...
+├── tmp/crossterm-rs/            # Upstream Rust source (gitignored)
+└── tools/ast_distance/          # Porting verification tool
+```
+
+---
+
+## Quality Checklist
+
+Before marking a file complete:
+
+- [ ] Port-lint header is FIRST line
+- [ ] Package matches folder structure
+- [ ] All public types ported
+- [ ] All public functions ported
+- [ ] All documentation ported (KDoc format)
+- [ ] ANSI sequences match exactly
+- [ ] Examples converted to Kotlin
+- [ ] Similarity score >= 0.85
+- [ ] Compiles without errors
