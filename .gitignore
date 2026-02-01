@@ -1,0 +1,22 @@
+target
+/.idea/
+/*.iml
+.env
+/build/
+/.gradle/
+/.android-sdk/
+local.properties
+
+# Upstream Rust sources for comparison
+/tmp/
+
+# AST Distance tool build artifacts
+/tools/ast_distance/build/
+/tools/ast_distance/ast_distance
+/tools/ast_distance/tasks.json
+/tools/ast_distance/tasks.json.lock
+
+# Generated port reports
+port_status_report.md
+high_priority_ports.md
+NEXT_ACTIONS.md
