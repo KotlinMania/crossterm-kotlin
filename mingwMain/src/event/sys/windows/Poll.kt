@@ -1,4 +1,5 @@
 // port-lint: source event/sys/windows/poll.rs
+@file:OptIn(kotlinx.cinterop.ExperimentalForeignApi::class)
 package io.github.kotlinmania.crossterm.event.sys.windows
 
 import kotlinx.cinterop.ExperimentalForeignApi
@@ -7,14 +8,13 @@ import kotlinx.cinterop.memScoped
 import platform.windows.GetStdHandle
 import platform.windows.INVALID_HANDLE_VALUE
 import platform.windows.STD_INPUT_HANDLE
+import platform.windows.HANDLE
+import platform.windows.HANDLEVar
 import platform.windows.WaitForMultipleObjects
 import platform.windows.WAIT_ABANDONED_0
 import platform.windows.WAIT_FAILED
 import platform.windows.WAIT_OBJECT_0
 import platform.windows.WAIT_TIMEOUT
-import platform.windows.WINBOOL
-import platform.windows.HANDLE
-import platform.windows.HANDLEVar
 import kotlin.time.Duration
 
 /**
@@ -70,20 +70,20 @@ class WinApiPoll private constructor(
         val output = waitForMultipleObjects(handles, dwMillis)
 
         return when {
-            output == WAIT_OBJECT_0 -> {
+            output == WAIT_OBJECT_0.toUInt() -> {
                 // Input handle triggered
                 true
             }
-            waker != null && output == WAIT_OBJECT_0 + 1u -> {
+            waker != null && output == WAIT_OBJECT_0.toUInt() + 1u -> {
                 // Semaphore handle triggered (waker)
                 waker.reset()
                 throw WakeInterruptException("Poll operation was woken up by Waker.wake")
             }
-            output == WAIT_TIMEOUT || output == WAIT_ABANDONED_0 -> {
+            output == WAIT_TIMEOUT.toUInt() || output == WAIT_ABANDONED_0.toUInt() -> {
                 // Timeout elapsed
                 null
             }
-            output == WAIT_FAILED -> {
+            output == WAIT_FAILED.toUInt() -> {
                 throw IllegalStateException("WaitForMultipleObjects failed")
             }
             else -> {
@@ -102,8 +102,7 @@ class WinApiPoll private constructor(
 private const val INFINITE: UInt = 0xFFFFFFFFu
 
 /**
- * Placeholder for Windows handle type.
- * Should be implemented using actual Windows API via Kotlin/Native.
+ * Windows handle type.
  */
 typealias WindowsHandle = HANDLE?
 
@@ -127,13 +126,13 @@ private fun waitForMultipleObjects(handles: List<WindowsHandle>, timeout: UInt):
     memScoped {
         val handleArray = allocArray<HANDLEVar>(handles.size)
         handles.forEachIndexed { idx, handle ->
-            handleArray[idx] = handle
+            handleArray[idx].value = handle ?: error("Null handle passed to waitForMultipleObjects")
         }
 
         return WaitForMultipleObjects(
             handles.size.toUInt(),
             handleArray,
-            WINBOOL(0),
+            0,
             timeout
         )
     }

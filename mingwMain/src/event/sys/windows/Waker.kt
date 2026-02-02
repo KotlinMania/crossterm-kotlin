@@ -1,14 +1,12 @@
 // port-lint: source event/sys/windows/waker.rs
+@file:OptIn(kotlinx.cinterop.ExperimentalForeignApi::class)
 package io.github.kotlinmania.crossterm.event.sys.windows
 
 import kotlinx.atomicfu.locks.ReentrantLock
 import kotlinx.atomicfu.locks.withLock
 import kotlinx.cinterop.ExperimentalForeignApi
 import platform.windows.CreateSemaphoreW
-import platform.windows.HANDLE
 import platform.windows.ReleaseSemaphore
-
-typealias WindowsHandle = HANDLE?
 
 /**
  * Allows to wake up the `WinApiPoll.poll()` method.

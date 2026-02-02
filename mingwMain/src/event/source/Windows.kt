@@ -1,10 +1,12 @@
 // port-lint: source event/source/windows.rs
+@file:OptIn(kotlinx.cinterop.ExperimentalForeignApi::class)
 package io.github.kotlinmania.crossterm.event.source
 
 import io.github.kotlinmania.crossterm.event.Event
 import io.github.kotlinmania.crossterm.event.InternalEvent
 import io.github.kotlinmania.crossterm.event.PollTimeout
 import io.github.kotlinmania.crossterm.event.source.Waker
+import io.github.kotlinmania.crossterm.event.sys.windows.EventFlags
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.alloc
 import kotlinx.cinterop.memScoped
@@ -343,6 +345,7 @@ private typealias WindowsHandle = HANDLE?
 /**
  * Windows console handle wrapper.
  */
+@OptIn(ExperimentalForeignApi::class)
 class Handle private constructor(internal val value: WindowsHandle) {
     companion object {
         @OptIn(ExperimentalForeignApi::class)
@@ -359,6 +362,7 @@ class Handle private constructor(internal val value: WindowsHandle) {
 /**
  * Windows console wrapper.
  */
+@OptIn(ExperimentalForeignApi::class)
 class Console private constructor(private val handle: Handle) {
     companion object {
         fun fromHandle(handle: Handle): Console = Console(handle)
@@ -366,14 +370,15 @@ class Console private constructor(private val handle: Handle) {
 
     @OptIn(ExperimentalForeignApi::class)
     fun numberOfConsoleInputEvents(): UInt {
-        memScoped {
+        val count = memScoped {
             val events = alloc<DWORDVar>()
             val result = GetNumberOfConsoleInputEvents(handle.value, events.ptr)
             if (result == 0) {
                 throw IllegalStateException("GetNumberOfConsoleInputEvents failed")
             }
-            return events.value.toUInt()
+            events.value.toUInt()
         }
+        return count
     }
 
     @OptIn(ExperimentalForeignApi::class)
