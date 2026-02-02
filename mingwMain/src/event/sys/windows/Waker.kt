@@ -3,6 +3,12 @@ package io.github.kotlinmania.crossterm.event.sys.windows
 
 import kotlinx.atomicfu.locks.ReentrantLock
 import kotlinx.atomicfu.locks.withLock
+import kotlinx.cinterop.ExperimentalForeignApi
+import platform.windows.CreateSemaphoreW
+import platform.windows.HANDLE
+import platform.windows.ReleaseSemaphore
+
+typealias WindowsHandle = HANDLE?
 
 /**
  * Allows to wake up the `WinApiPoll.poll()` method.
@@ -91,8 +97,7 @@ class Waker private constructor(
 /**
  * Windows semaphore wrapper.
  *
- * This is a placeholder that should be implemented using the Windows API
- * via Kotlin/Native (CreateSemaphore, ReleaseSemaphore, CloseHandle).
+ * Backed by WinAPI CreateSemaphore/ReleaseSemaphore for waking poll loops.
  */
 class Semaphore private constructor(
     private val handle: WindowsHandle
@@ -101,17 +106,26 @@ class Semaphore private constructor(
         /**
          * Creates a new semaphore with initial count 0 and max count 1.
          */
+        @OptIn(ExperimentalForeignApi::class)
         fun new(): Semaphore {
-            // TODO: Implement with CreateSemaphore(NULL, 0, 1, NULL)
-            return Semaphore(0L)
+            val handle = CreateSemaphoreW(
+                null,
+                0,
+                1,
+                null
+            ) ?: throw IllegalStateException("Failed to create semaphore")
+            return Semaphore(handle)
         }
     }
 
     /**
      * Releases the semaphore (increments the count).
      */
+    @OptIn(ExperimentalForeignApi::class)
     fun release() {
-        // TODO: Implement with ReleaseSemaphore(handle, 1, NULL)
+        if (ReleaseSemaphore(handle, 1, null) == 0) {
+            throw IllegalStateException("Failed to release semaphore")
+        }
     }
 
     /**

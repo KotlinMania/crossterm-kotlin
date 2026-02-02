@@ -3,6 +3,16 @@ package io.github.kotlinmania.crossterm.style.sys
 
 import io.github.kotlinmania.crossterm.style.types.Color
 import io.github.kotlinmania.crossterm.style.types.Colored
+import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.cinterop.alloc
+import kotlinx.cinterop.memScoped
+import kotlinx.cinterop.ptr
+import platform.windows.CONSOLE_SCREEN_BUFFER_INFO
+import platform.windows.GetConsoleScreenBufferInfo
+import platform.windows.GetStdHandle
+import platform.windows.INVALID_HANDLE_VALUE
+import platform.windows.SetConsoleTextAttribute
+import platform.windows.STD_OUTPUT_HANDLE
 import kotlin.concurrent.atomics.AtomicInt
 import kotlin.concurrent.atomics.ExperimentalAtomicApi
 
@@ -185,17 +195,35 @@ private fun backgroundColorToU16(color: Color): UShort {
 
 /**
  * Gets the current console text attributes.
- * Placeholder - implement with GetConsoleScreenBufferInfo.
  */
+@OptIn(ExperimentalForeignApi::class)
 private fun getCurrentConsoleAttributes(): UShort {
-    // TODO: Implement with Windows API
-    return 0x07u // Default white on black
+    memScoped {
+        val handle = GetStdHandle(STD_OUTPUT_HANDLE)
+        if (handle == INVALID_HANDLE_VALUE) {
+            throw IllegalStateException("Failed to get standard output handle")
+        }
+
+        val csbi = alloc<CONSOLE_SCREEN_BUFFER_INFO>()
+        if (GetConsoleScreenBufferInfo(handle, csbi.ptr) == 0) {
+            throw IllegalStateException("Failed to get console screen buffer info")
+        }
+
+        return csbi.wAttributes.toUShort()
+    }
 }
 
 /**
  * Sets the console text attribute.
- * Placeholder - implement with SetConsoleTextAttribute.
  */
+@OptIn(ExperimentalForeignApi::class)
 private fun setConsoleTextAttribute(attribute: UShort) {
-    // TODO: Implement with Windows API
+    val handle = GetStdHandle(STD_OUTPUT_HANDLE)
+    if (handle == INVALID_HANDLE_VALUE) {
+        throw IllegalStateException("Failed to get standard output handle")
+    }
+
+    if (SetConsoleTextAttribute(handle, attribute) == 0) {
+        throw IllegalStateException("Failed to set console text attribute")
+    }
 }

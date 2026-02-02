@@ -5,6 +5,23 @@ import io.github.kotlinmania.crossterm.event.Event
 import io.github.kotlinmania.crossterm.event.InternalEvent
 import io.github.kotlinmania.crossterm.event.PollTimeout
 import io.github.kotlinmania.crossterm.event.source.Waker
+import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.cinterop.alloc
+import kotlinx.cinterop.memScoped
+import kotlinx.cinterop.ptr
+import platform.windows.DWORDVar
+import platform.windows.FOCUS_EVENT
+import platform.windows.GetNumberOfConsoleInputEvents
+import platform.windows.GetStdHandle
+import platform.windows.INPUT_RECORD
+import platform.windows.INVALID_HANDLE_VALUE
+import platform.windows.KEY_EVENT
+import platform.windows.MENU_EVENT
+import platform.windows.MOUSE_EVENT
+import platform.windows.ReadConsoleInputW
+import platform.windows.STD_INPUT_HANDLE
+import platform.windows.WINDOW_BUFFER_SIZE_EVENT
+import platform.windows.HANDLE
 import kotlin.time.Duration
 
 /**
@@ -321,63 +338,124 @@ data class FocusEventRecord(
     val setFocus: Boolean
 )
 
+private typealias WindowsHandle = HANDLE?
+
 /**
- * Placeholder for Windows console handle wrapper.
- *
- * TODO: Implement with actual Windows API bindings.
+ * Windows console handle wrapper.
  */
-class Handle private constructor(private val value: Long) {
+class Handle private constructor(internal val value: WindowsHandle) {
     companion object {
+        @OptIn(ExperimentalForeignApi::class)
         fun currentInHandle(): Handle {
-            // TODO: Implement with GetStdHandle(STD_INPUT_HANDLE)
-            return Handle(0L)
+            val handle = GetStdHandle(STD_INPUT_HANDLE)
+            if (handle == INVALID_HANDLE_VALUE) {
+                throw IllegalStateException("Failed to get standard input handle")
+            }
+            return Handle(handle)
         }
     }
 }
 
 /**
- * Placeholder for Windows console wrapper.
- *
- * TODO: Implement with actual Windows API bindings.
+ * Windows console wrapper.
  */
 class Console private constructor(private val handle: Handle) {
     companion object {
         fun fromHandle(handle: Handle): Console = Console(handle)
     }
 
+    @OptIn(ExperimentalForeignApi::class)
     fun numberOfConsoleInputEvents(): UInt {
-        // TODO: Implement with GetNumberOfConsoleInputEvents
-        return 0u
+        memScoped {
+            val events = alloc<DWORDVar>()
+            val result = GetNumberOfConsoleInputEvents(handle.value, events.ptr)
+            if (result == 0) {
+                throw IllegalStateException("GetNumberOfConsoleInputEvents failed")
+            }
+            return events.value.toUInt()
+        }
     }
 
+    @OptIn(ExperimentalForeignApi::class)
     fun readSingleInputEvent(): InputRecord {
-        // TODO: Implement with ReadConsoleInput
-        throw NotImplementedError("Console.readSingleInputEvent not yet implemented")
+        memScoped {
+            val record = alloc<INPUT_RECORD>()
+            val read = alloc<DWORDVar>()
+            if (ReadConsoleInputW(handle.value, record.ptr, 1u, read.ptr) == 0) {
+                throw IllegalStateException("ReadConsoleInputW failed")
+            }
+
+            return when (record.EventType.toInt()) {
+                KEY_EVENT -> {
+                    val key = record.Event.KeyEvent!!
+                    val keyRecord = KeyEventRecord(
+                        keyDown = key.bKeyDown != 0,
+                        virtualKeyCode = key.wVirtualKeyCode.toUShort(),
+                        virtualScanCode = key.wVirtualScanCode.toUShort(),
+                        uChar = key.uChar.UnicodeChar.toUShort(),
+                        controlKeyState = ControlKeyState(key.dwControlKeyState.toUInt())
+                    )
+                    InputRecord.KeyEvent(keyRecord)
+                }
+                MOUSE_EVENT -> {
+                    val mouse = record.Event.MouseEvent!!
+                    val mouseRecord = MouseEventRecord(
+                        mousePosition = Coord(mouse.dwMousePosition.X, mouse.dwMousePosition.Y),
+                        buttonState = ButtonState(mouse.dwButtonState.toUInt()),
+                        controlKeyState = ControlKeyState(mouse.dwControlKeyState.toUInt()),
+                        eventFlags = when (mouse.dwEventFlags.toInt()) {
+                            0 -> EventFlags.PressOrRelease
+                            0x0002 -> EventFlags.MouseMoved
+                            0x0004 -> EventFlags.DoubleClick
+                            0x0008 -> EventFlags.MouseWheeled
+                            0x0010 -> EventFlags.MouseHwheeled
+                            else -> EventFlags.PressOrRelease
+                        }
+                    )
+                    InputRecord.MouseEvent(mouseRecord)
+                }
+                WINDOW_BUFFER_SIZE_EVENT -> {
+                    val size = record.Event.WindowBufferSizeEvent!!
+                    InputRecord.WindowBufferSizeEvent(
+                        WindowBufferSizeRecord(Coord(size.dwSize.X, size.dwSize.Y))
+                    )
+                }
+                FOCUS_EVENT -> {
+                    val focus = record.Event.FocusEvent!!
+                    InputRecord.FocusEvent(FocusEventRecord(focus.bSetFocus != 0))
+                }
+                MENU_EVENT -> InputRecord.MenuEvent
+                else -> InputRecord.MenuEvent
+            }
+        }
     }
 }
 
 /**
  * Windows API polling wrapper.
- *
- * TODO: Implement with actual Windows API bindings.
  */
 class WinApiPoll private constructor(
-    private val waker: io.github.kotlinmania.crossterm.event.sys.windows.Waker?
+    private val inner: io.github.kotlinmania.crossterm.event.sys.windows.WinApiPoll
 ) {
     companion object {
-        fun new(): WinApiPoll = WinApiPoll(waker = null)
+        fun new(): WinApiPoll = WinApiPoll(
+            io.github.kotlinmania.crossterm.event.sys.windows.WinApiPoll.new()
+        )
 
         fun newWithWaker(): WinApiPoll = WinApiPoll(
-            waker = io.github.kotlinmania.crossterm.event.sys.windows.Waker.new()
+            io.github.kotlinmania.crossterm.event.sys.windows.WinApiPoll.newWithWaker()
         )
     }
 
     fun poll(timeout: Duration?): Boolean? {
-        // TODO: Implement with WaitForMultipleObjects
-        return null
+        return try {
+            inner.poll(timeout)
+        } catch (_: io.github.kotlinmania.crossterm.event.sys.windows.WakeInterruptException) {
+            null
+        }
     }
 
-    fun waker(): Waker? = waker
+    fun waker(): Waker? = inner.waker()
 }
 
 /**

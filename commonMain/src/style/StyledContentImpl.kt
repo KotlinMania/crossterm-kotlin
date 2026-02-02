@@ -118,18 +118,14 @@ data class PrintStyledContent<D>(val styledContent: StyledContent<D>) : Command 
         writer.append(styledContent.content().toString())
 
         if (reset) {
-            // NOTE: This will reset colors even though self has no colors, hence produce unexpected
-            // resets.
-            // TODO: reset the set attributes only.
-            ResetColor.writeAnsi(writer)
-        } else {
-            // NOTE: Since the above bug, we do not need to reset colors when we reset attributes.
-            if (resetBackground) {
-                SetBackgroundColor(Color.Reset).writeAnsi(writer)
-            }
-            if (resetForeground) {
-                SetForegroundColor(Color.Reset).writeAnsi(writer)
-            }
+            SetAttribute(Attribute.Reset).writeAnsi(writer)
+        }
+
+        if (resetBackground) {
+            SetBackgroundColor(Color.Reset).writeAnsi(writer)
+        }
+        if (resetForeground) {
+            SetForegroundColor(Color.Reset).writeAnsi(writer)
         }
     }
 }

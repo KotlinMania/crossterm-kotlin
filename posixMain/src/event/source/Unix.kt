@@ -104,79 +104,29 @@ internal class Parser {
 
             buffer.add(byte)
 
-            val parseResult = parseEvent(buffer.toByteArray(), moreAvailable)
-            when {
-                parseResult != null -> {
-                    internalEvents.addLast(parseResult)
+            val parseResult = io.github.kotlinmania.crossterm.event.sys.unix.parseEvent(
+                buffer.toByteArray(),
+                moreAvailable
+            )
+            when (parseResult) {
+                is io.github.kotlinmania.crossterm.event.sys.unix.ParseResult.Success -> {
+                    internalEvents.addLast(parseResult.event)
                     buffer.clear()
                 }
-                // parseResult is null - could be incomplete sequence or error
-                // If buffer is getting too long with no result, it's likely an error
-                buffer.size > 64 -> {
-                    // Event can't be parsed (not enough parameters, parameter is not a number, etc.)
-                    // Clear the buffer and continue with another sequence
+                io.github.kotlinmania.crossterm.event.sys.unix.ParseResult.Incomplete -> {
+                    // Keep buffering
+                }
+                io.github.kotlinmania.crossterm.event.sys.unix.ParseResult.Error -> {
+                    // Failed to parse; clear buffer and continue
                     buffer.clear()
                 }
-                // Otherwise, keep the buffer and process next bytes
-                // (incomplete sequence case)
             }
         }
     }
-
     /**
      * Returns the next parsed event, if any.
      *
      * @return The next internal event, or null if the queue is empty
      */
     fun next(): InternalEvent? = internalEvents.removeFirstOrNull()
-}
-
-/**
- * Parses input bytes into an internal event.
- *
- * This is a placeholder for the actual ANSI escape sequence parser.
- * The full implementation will be provided by the unix.parse module.
- *
- * @param buffer The bytes to parse
- * @param more Whether more data may be available
- * @return The parsed event, or null if parsing is incomplete or failed
- */
-internal fun parseEvent(buffer: ByteArray, more: Boolean): InternalEvent? {
-    // TODO: Delegate to io.github.kotlinmania.crossterm.event.sys.unix.parseEvent
-    // For now, handle simple single-byte characters
-    if (buffer.size == 1 && !more) {
-        val byte = buffer[0]
-        // Simple ASCII character handling
-        if (byte in 32..126) {
-            return InternalEvent.EventWrapper(
-                Event.Key(KeyEvent(code = KeyCode.Char(byte.toInt().toChar())))
-            )
-        }
-        // Handle Enter key
-        if (byte == 13.toByte() || byte == 10.toByte()) {
-            return InternalEvent.EventWrapper(
-                Event.Key(KeyEvent(code = KeyCode.Enter))
-            )
-        }
-        // Handle Escape key
-        if (byte == 27.toByte() && !more) {
-            return InternalEvent.EventWrapper(
-                Event.Key(KeyEvent(code = KeyCode.Esc))
-            )
-        }
-        // Handle Tab key
-        if (byte == 9.toByte()) {
-            return InternalEvent.EventWrapper(
-                Event.Key(KeyEvent(code = KeyCode.Tab))
-            )
-        }
-        // Handle Backspace
-        if (byte == 127.toByte() || byte == 8.toByte()) {
-            return InternalEvent.EventWrapper(
-                Event.Key(KeyEvent(code = KeyCode.Backspace))
-            )
-        }
-    }
-    // More bytes expected or unrecognized sequence
-    return null
 }

@@ -1,6 +1,20 @@
 // port-lint: source event/sys/windows/poll.rs
 package io.github.kotlinmania.crossterm.event.sys.windows
 
+import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.cinterop.allocArray
+import kotlinx.cinterop.memScoped
+import platform.windows.GetStdHandle
+import platform.windows.INVALID_HANDLE_VALUE
+import platform.windows.STD_INPUT_HANDLE
+import platform.windows.WaitForMultipleObjects
+import platform.windows.WAIT_ABANDONED_0
+import platform.windows.WAIT_FAILED
+import platform.windows.WAIT_OBJECT_0
+import platform.windows.WAIT_TIMEOUT
+import platform.windows.WINBOOL
+import platform.windows.HANDLE
+import platform.windows.HANDLEVar
 import kotlin.time.Duration
 
 /**
@@ -86,31 +100,41 @@ class WinApiPoll private constructor(
 
 // Windows constants
 private const val INFINITE: UInt = 0xFFFFFFFFu
-private const val WAIT_OBJECT_0: UInt = 0x00000000u
-private const val WAIT_ABANDONED_0: UInt = 0x00000080u
-private const val WAIT_TIMEOUT: UInt = 0x00000102u
-private const val WAIT_FAILED: UInt = 0xFFFFFFFFu
 
 /**
  * Placeholder for Windows handle type.
  * Should be implemented using actual Windows API via Kotlin/Native.
  */
-typealias WindowsHandle = Long
+typealias WindowsHandle = HANDLE?
 
 /**
  * Gets the current console input handle.
- * Placeholder - implement with GetStdHandle(STD_INPUT_HANDLE).
  */
+@OptIn(ExperimentalForeignApi::class)
 private fun getCurrentInputHandle(): WindowsHandle {
-    // TODO: Implement with actual Windows API
-    return 0L
+    val handle = GetStdHandle(STD_INPUT_HANDLE)
+    if (handle == INVALID_HANDLE_VALUE) {
+        throw IllegalStateException("Failed to get standard input handle")
+    }
+    return handle
 }
 
 /**
  * Waits for multiple objects.
- * Placeholder - implement with WaitForMultipleObjects.
  */
+@OptIn(ExperimentalForeignApi::class)
 private fun waitForMultipleObjects(handles: List<WindowsHandle>, timeout: UInt): UInt {
-    // TODO: Implement with actual Windows API
-    return WAIT_TIMEOUT
+    memScoped {
+        val handleArray = allocArray<HANDLEVar>(handles.size)
+        handles.forEachIndexed { idx, handle ->
+            handleArray[idx] = handle
+        }
+
+        return WaitForMultipleObjects(
+            handles.size.toUInt(),
+            handleArray,
+            WINBOOL(0),
+            timeout
+        )
+    }
 }
