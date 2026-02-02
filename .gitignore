@@ -5,6 +5,7 @@ target
 /build/
 /.gradle/
 /.android-sdk/
+/.kotlin/
 local.properties
 
 # Upstream Rust sources for comparison
@@ -13,6 +14,7 @@ local.properties
 # AST Distance tool build artifacts
 /tools/ast_distance/build/
 /tools/ast_distance/ast_distance
+/tools/ast_distance/.cache/
 /tools/ast_distance/tasks.json
 /tools/ast_distance/tasks.json.lock
 
@@ -20,3 +22,13 @@ local.properties
 port_status_report.md
 high_priority_ports.md
 NEXT_ACTIONS.md
+deep_report.txt
+
+# Task tracking (local dev)
+tasks.json
+tasks.json.lock
+tasks_new.json
+tasks_new.json.lock
+
+# JS/WASM artifacts
+/kotlin-js-store/

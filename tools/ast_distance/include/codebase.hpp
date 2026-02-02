@@ -148,9 +148,8 @@ public:
             std::string path = entry.path().string();
             if (!has_valid_ext(path)) continue;
 
-            // Skip test files and build artifacts
-            if (path.find("/test") != std::string::npos ||
-                path.find("/target/") != std::string::npos ||
+            // Skip build artifacts only
+            if (path.find("/target/") != std::string::npos ||
                 path.find("/build/") != std::string::npos) {
                 continue;
             }

@@ -87,6 +87,7 @@ kotlin {
             kotlin.srcDir("commonMain/src")
             dependencies {
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.1")
+                implementation("org.jetbrains.kotlinx:atomicfu:0.27.0")
             }
         }
 
@@ -98,8 +99,50 @@ kotlin {
             }
         }
 
+        // nativeMain is now empty - shared native code would go in nativeMain/src
+        // but platform-specific implementations go in posixMain or mingwMain
         val nativeMain by getting {
             kotlin.srcDir("nativeMain/src")
+        }
+
+        // desktopPosixMain contains terminal-specific implementations for desktop POSIX (macOS, Linux)
+        // This is separate from iOS which doesn't have traditional terminal access
+        val desktopPosixMain by creating {
+            dependsOn(nativeMain)
+            kotlin.srcDir("posixMain/src")
+        }
+
+        // macOS and Linux use desktop POSIX terminal code
+        val macosMain by getting {
+            dependsOn(desktopPosixMain)
+            kotlin.srcDir("macosMain/src")
+        }
+        val linuxMain by getting {
+            dependsOn(desktopPosixMain)
+            kotlin.srcDir("linuxMain/src")
+        }
+
+        // iOS needs its own stubs since it doesn't have terminal access
+        val iosMain by getting {
+            dependsOn(nativeMain)
+            kotlin.srcDir("iosMain/src")
+        }
+
+        // mingwMain contains Windows-specific implementations
+        val mingwMain by getting {
+            kotlin.srcDir("mingwMain/src")
+        }
+
+        val jsMain by getting {
+            kotlin.srcDir("jsMain/src")
+        }
+
+        val wasmJsMain by getting {
+            kotlin.srcDir("wasmJsMain/src")
+        }
+
+        val androidMain by getting {
+            kotlin.srcDir("androidMain/src")
         }
     }
 

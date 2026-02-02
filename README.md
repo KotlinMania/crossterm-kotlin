@@ -1,29 +1,44 @@
+<div align="center">
+
 # Crossterm-Kotlin
 
-[![Kotlin](https://img.shields.io/badge/Kotlin-2.1+-blue.svg?logo=kotlin)](https://kotlinlang.org)
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](#license)
-[![GitHub](https://img.shields.io/badge/github-KotlinMania%2Fcrossterm--kotlin-blue?logo=github)](https://github.com/KotlinMania/crossterm-kotlin)
+**Cross-platform terminal manipulation for Kotlin Multiplatform**
 
-A **Kotlin Multiplatform Native** terminal manipulation library. This is a port of the Rust [crossterm](https://github.com/crossterm-rs/crossterm) crate.
+[![Kotlin](https://img.shields.io/badge/Kotlin-2.3.0-7F52FF?logo=kotlin&logoColor=white)](https://kotlinlang.org)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.kotlinmania/crossterm-kotlin?color=blue)](https://central.sonatype.com/artifact/io.github.kotlinmania/crossterm-kotlin)
+[![CI](https://github.com/KotlinMania/crossterm-kotlin/actions/workflows/ci.yml/badge.svg)](https://github.com/KotlinMania/crossterm-kotlin/actions/workflows/ci.yml)
 
-## Overview
+[Installation](#installation) | [Quick Start](#quick-start) | [Platforms](#supported-platforms) | [API Reference](#api-reference) | [License](#license)
 
-Crossterm-Kotlin provides cross-platform terminal manipulation capabilities:
+</div>
 
-- **Cursor** - Move the cursor, hide/show, change shape
-- **Styling** - Colors (16, 256, RGB) and text attributes (bold, italic, etc.)
-- **Terminal** - Clear screen, alternate screen buffer, raw mode
-- **Events** - Keyboard, mouse, resize, and focus events
+---
+
+Crossterm-Kotlin is a Kotlin Multiplatform library for terminal manipulation. It is a faithful port of the Rust [crossterm](https://github.com/crossterm-rs/crossterm) crate, providing cross-platform APIs for cursor control, styling, terminal management, and event handling.
+
+## Features
+
+- **Cursor** - Move, hide/show, save/restore position, change cursor shape
+- **Styling** - 16 colors, 256 colors, RGB/true colors, text attributes (bold, italic, underline, etc.)
+- **Terminal** - Clear screen, scroll, alternate screen buffer, raw mode, window title
+- **Events** - Keyboard input, mouse events, terminal resize, focus tracking, bracketed paste
 
 ## Supported Platforms
 
-- macOS (arm64, x64)
-- Linux (x64)
-- Windows (x64 via MinGW)
+| Platform | Status | Notes |
+|----------|--------|-------|
+| macOS (arm64, x64) | Full | Native terminal via POSIX |
+| Linux (x64) | Full | Native terminal via POSIX |
+| Windows (x64) | Full | Native console API via MinGW |
+| iOS | Partial | Styling only (no TTY) |
+| Android | Partial | Styling only (no TTY) |
+| JS/Browser | Partial | ANSI output only |
+| WasmJS | Partial | ANSI output only |
 
 ## Installation
 
-### Maven Central
+### Gradle (Kotlin DSL)
 
 ```kotlin
 dependencies {
@@ -31,16 +46,12 @@ dependencies {
 }
 ```
 
-### As a Git Submodule
+### Gradle (Groovy)
 
-```bash
-git submodule add https://github.com/KotlinMania/crossterm-kotlin.git
-```
-
-Then in your `settings.gradle.kts`:
-
-```kotlin
-include(":crossterm-kotlin")
+```groovy
+dependencies {
+    implementation 'io.github.kotlinmania:crossterm-kotlin:0.1.0'
+}
 ```
 
 ## Quick Start
@@ -51,22 +62,26 @@ include(":crossterm-kotlin")
 import io.github.kotlinmania.crossterm.cursor.*
 import io.github.kotlinmania.crossterm.execute
 
-// Move cursor to position (10, 5)
+// Move cursor to column 10, row 5
 print(MoveTo(10u, 5u).ansiString())
 
-// Hide cursor
+// Hide and show cursor
 print(Hide.ansiString())
+print(Show.ansiString())
 
-// Execute multiple commands
-print(execute(MoveTo(0u, 0u), Show))
+// Save and restore position
+print(SavePosition.ansiString())
+print(MoveTo(0u, 0u).ansiString())
+print(RestorePosition.ansiString())
 ```
 
-### Styling
+### Text Styling
 
 ```kotlin
 import io.github.kotlinmania.crossterm.style.*
+import io.github.kotlinmania.crossterm.style.types.*
 
-// Set foreground color
+// Basic colors
 print(SetForegroundColor(Color.Red).ansiString())
 print("Red text")
 print(ResetColor.ansiString())
@@ -75,9 +90,21 @@ print(ResetColor.ansiString())
 print(SetForegroundColor(Color.Rgb(255u, 128u, 0u)).ansiString())
 print("Orange text")
 
+// 256-color palette
+print(SetBackgroundColor(Color.AnsiValue(220u)).ansiString())
+
 // Text attributes
 print(SetAttribute(Attribute.Bold).ansiString())
-print("Bold text")
+print(SetAttribute(Attribute.Italic).ansiString())
+print("Bold and italic")
+print(SetAttribute(Attribute.Reset).ansiString())
+
+// Styled content (chainable)
+val styled = "Hello".stylize()
+    .with(Color.Cyan)
+    .on(Color.DarkBlue)
+    .bold()
+    .italic()
 ```
 
 ### Terminal Control
@@ -85,64 +112,146 @@ print("Bold text")
 ```kotlin
 import io.github.kotlinmania.crossterm.terminal.*
 
-// Enter alternate screen buffer
+// Enter alternate screen buffer (like vim/less)
 print(EnterAlternateScreen.ansiString())
 
 // Clear screen
 print(Clear(ClearType.All).ansiString())
 
+// Set window title
+print(SetTitle("My App").ansiString())
+
+// Enable raw mode for character-by-character input
+enableRawMode()
+// ... handle input ...
+disableRawMode()
+
 // Leave alternate screen
 print(LeaveAlternateScreen.ansiString())
 ```
 
-### Events
+### Event Handling
 
 ```kotlin
 import io.github.kotlinmania.crossterm.event.*
 
-// Event types
-val keyEvent = KeyEvent(
-    code = KeyCode.Char('q'),
-    modifiers = KeyModifiers.CONTROL
-)
+// Enable mouse capture
+print(EnableMouseCapture.ansiString())
 
-when (val event = readEvent()) {
-    is Event.Key -> handleKey(event.keyEvent)
-    is Event.Mouse -> handleMouse(event.mouseEvent)
-    is Event.Resize -> handleResize(event.columns, event.rows)
-    Event.FocusGained -> handleFocus(true)
-    Event.FocusLost -> handleFocus(false)
-    is Event.Paste -> handlePaste(event.content)
+// Poll for events with timeout
+if (poll(100.milliseconds)) {
+    when (val event = read()) {
+        is Event.Key -> {
+            val key = event.keyEvent
+            when (key.code) {
+                is KeyCode.Char -> println("Key: ${(key.code as KeyCode.Char).char}")
+                KeyCode.Enter -> println("Enter pressed")
+                KeyCode.Esc -> println("Escape pressed")
+                else -> {}
+            }
+        }
+        is Event.Mouse -> {
+            val mouse = event.mouseEvent
+            println("Mouse ${mouse.kind} at (${mouse.column}, ${mouse.row})")
+        }
+        is Event.Resize -> {
+            println("Terminal resized to ${event.columns}x${event.rows}")
+        }
+        Event.FocusGained -> println("Focus gained")
+        Event.FocusLost -> println("Focus lost")
+        is Event.Paste -> println("Pasted: ${event.content}")
+    }
+}
+
+// Disable mouse capture
+print(DisableMouseCapture.ansiString())
+```
+
+## API Reference
+
+### Modules
+
+| Module | Description |
+|--------|-------------|
+| `io.github.kotlinmania.crossterm.cursor` | Cursor movement and visibility |
+| `io.github.kotlinmania.crossterm.style` | Colors, attributes, and styled content |
+| `io.github.kotlinmania.crossterm.terminal` | Screen control, raw mode, terminal info |
+| `io.github.kotlinmania.crossterm.event` | Keyboard, mouse, and system events |
+
+### Command Pattern
+
+All terminal commands implement a common pattern:
+
+```kotlin
+interface Command {
+    fun ansiString(): String      // Get ANSI escape sequence
+    fun writeAnsi(writer: Writer) // Write to a writer
 }
 ```
 
-## Porting Status
+Commands can be executed individually or batched:
 
-This is an early port. See [AGENTS.md](AGENTS.md) for porting guidelines and progress tracking.
+```kotlin
+// Individual
+print(MoveTo(0u, 0u).ansiString())
 
-### Completed
-- Event types (Event, KeyEvent, KeyCode, KeyModifiers, MouseEvent)
-- Cursor commands (MoveTo, Hide, Show, etc.)
-- Style commands (SetForegroundColor, SetBackgroundColor, colors, attributes)
-- Terminal commands (EnterAlternateScreen, Clear, etc.)
+// Batched
+print(execute(
+    MoveTo(0u, 0u),
+    Clear(ClearType.All),
+    SetForegroundColor(Color.Green)
+))
+```
 
-### In Progress
-- Event reading (platform-specific)
-- Raw mode (platform-specific termios/console API)
-- Terminal size detection
+## Building from Source
+
+```bash
+# Clone the repository
+git clone https://github.com/KotlinMania/crossterm-kotlin.git
+cd crossterm-kotlin
+
+# Build all targets
+./gradlew assemble
+
+# Run tests
+./gradlew allTests
+
+# Build for specific platform
+./gradlew macosArm64MainKlibrary
+./gradlew linuxX64MainKlibrary
+./gradlew mingwX64MainKlibrary
+```
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit issues and pull requests.
+
+This project uses:
+- Kotlin 2.3.0
+- Gradle 9.2.1
+- kotlinx-coroutines for async operations
+- POSIX APIs on Unix-like systems
+- Windows Console API on Windows
+
+## Acknowledgements
+
+This Kotlin Multiplatform library is a port of the excellent [crossterm](https://github.com/crossterm-rs/crossterm) Rust crate. Special thanks to [Timon](https://github.com/TimonPost) and the crossterm-rs maintainers for creating such a well-designed cross-platform terminal library.
 
 ## License
 
-Licensed under the MIT license ([LICENSE-MIT](./LICENSE-MIT)).
+This project is licensed under the [MIT License](./LICENSE).
 
-### Contribution
-
-Unless you explicitly state otherwise, any contribution intentionally submitted for inclusion in the work by you shall be licensed as above, without any additional terms or conditions.
+```
+Copyright (c) 2019 Timon (crossterm-rs)
+Copyright (c) 2024-2026 Sydney Renee, The Solace Project
+```
 
 ---
 
-## Acknowledgments
+<div align="center">
 
-This Kotlin Multiplatform port was created by **Sydney Renee** of [The Solace Project](mailto:sydney@solace.ofharmony.ai) for [KotlinMania](https://github.com/KotlinMania).
+**Maintained by [Sydney Renee](mailto:sydney@solace.ofharmony.ai) of [The Solace Project](https://github.com/TheSolaceProject)**
 
-Special thanks to the [crossterm](https://github.com/crossterm-rs/crossterm) maintainers and contributors.
+Part of the [KotlinMania](https://github.com/KotlinMania) organization
+
+</div>

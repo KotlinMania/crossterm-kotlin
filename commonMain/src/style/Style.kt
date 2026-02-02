@@ -154,7 +154,17 @@ enum class Attribute {
     /** Not framed or encircled */
     NotFramedOrEncircled,
     /** Not overlined */
-    NotOverLined
+    NotOverLined;
+
+    /**
+     * Returns a u32 with one bit set, which is the
+     * signature of this attribute in the Attributes
+     * bitset.
+     *
+     * The +1 enables storing Reset (whose index is 0)
+     * in the bitset Attributes.
+     */
+    fun bytes(): UInt = 1u shl (ordinal + 1)
 }
 
 /**
