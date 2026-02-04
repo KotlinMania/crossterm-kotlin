@@ -2,7 +2,21 @@
 package io.github.kotlinmania.crossterm.event.sys.windows
 
 import io.github.kotlinmania.crossterm.event.*
-import io.github.kotlinmania.crossterm.event.source.MouseButtonsPressed
+import io.github.kotlinmania.crossterm.winapi.*
+
+/**
+ * Tracks which mouse buttons are currently pressed.
+ *
+ * Used to determine the correct mouse event type (button down vs. drag)
+ * based on the current button state versus the previous state.
+ *
+ * Corresponds to `MouseButtonsPressed` struct in Rust parse.rs.
+ */
+data class MouseButtonsPressed(
+    val left: Boolean = false,
+    val right: Boolean = false,
+    val middle: Boolean = false
+)
 
 /**
  * Windows virtual key codes.
@@ -34,31 +48,6 @@ internal object VirtualKey {
 }
 
 /**
- * Windows control key state flags.
- *
- * These constants match the Windows API values from wincon.h.
- */
-internal object ControlKeyFlags {
-    const val SHIFT_PRESSED = 0x0010u
-    const val LEFT_CTRL_PRESSED = 0x0008u
-    const val RIGHT_CTRL_PRESSED = 0x0004u
-    const val LEFT_ALT_PRESSED = 0x0002u
-    const val RIGHT_ALT_PRESSED = 0x0001u
-    const val CAPSLOCK_ON = 0x0080u
-}
-
-/**
- * Windows mouse event flags.
- */
-enum class EventFlags {
-    PressOrRelease,
-    DoubleClick,
-    MouseMoved,
-    MouseWheeled,
-    MouseHwheeled
-}
-
-/**
  * Character case for keyboard layout handling.
  */
 private enum class CharCase {
@@ -74,113 +63,6 @@ internal sealed class WindowsKeyEvent {
     data class Surrogate(val value: UShort) : WindowsKeyEvent()
 }
 
-/**
- * Key event record from Windows Console API.
- *
- * This is the Kotlin representation of the Windows KEY_EVENT_RECORD structure.
- */
-data class KeyEventRecord(
-    /** Whether this is a key down event (true) or key release (false). */
-    val keyDown: Boolean,
-    /** Virtual key code (VK_* constant). */
-    val virtualKeyCode: UShort,
-    /** Hardware scan code of the key. */
-    val virtualScanCode: UShort,
-    /** UTF-16 character value. */
-    val uChar: UShort,
-    /** Control key state flags. */
-    val controlKeyState: ControlKeyState
-)
-
-/**
- * Control key state from Windows key event.
- */
-data class ControlKeyState(
-    val flags: UInt
-) {
-    /**
-     * Checks if the given state flags are set.
-     */
-    fun hasState(state: UInt): Boolean = (flags and state) != 0u
-
-    /**
-     * Converts the control key state to [KeyModifiers].
-     */
-    fun toKeyModifiers(): KeyModifiers {
-        val shift = hasState(ControlKeyFlags.SHIFT_PRESSED)
-        val alt = hasState(ControlKeyFlags.LEFT_ALT_PRESSED or ControlKeyFlags.RIGHT_ALT_PRESSED)
-        val control = hasState(ControlKeyFlags.LEFT_CTRL_PRESSED or ControlKeyFlags.RIGHT_CTRL_PRESSED)
-
-        var modifier = KeyModifiers.empty()
-
-        if (shift) {
-            modifier = modifier + KeyModifiers.SHIFT
-        }
-        if (control) {
-            modifier = modifier + KeyModifiers.CONTROL
-        }
-        if (alt) {
-            modifier = modifier + KeyModifiers.ALT
-        }
-
-        return modifier
-    }
-}
-
-/**
- * Mouse event record from Windows Console API.
- *
- * This is the Kotlin representation of the Windows MOUSE_EVENT_RECORD structure.
- */
-data class MouseEventRecord(
-    /** Mouse position coordinates. */
-    val mousePosition: Coord,
-    /** Button state flags. */
-    val buttonState: ButtonState,
-    /** Control key state flags. */
-    val controlKeyState: ControlKeyState,
-    /** Event flags indicating the type of mouse event. */
-    val eventFlags: EventFlags
-)
-
-/**
- * Coordinate type for mouse position.
- */
-data class Coord(
-    val x: Short,
-    val y: Short
-)
-
-/**
- * Button state from Windows mouse event.
- */
-data class ButtonState(
-    val flags: UInt
-) {
-    /** Whether the left mouse button is pressed. */
-    fun leftButton(): Boolean = (flags and 0x0001u) != 0u
-
-    /** Whether the right mouse button is pressed. */
-    fun rightButton(): Boolean = (flags and 0x0002u) != 0u
-
-    /** Whether the middle mouse button is pressed. */
-    fun middleButton(): Boolean = (flags and 0x0004u) != 0u
-
-    /** Whether no button is pressed (release state). */
-    fun releaseButton(): Boolean = flags == 0u
-
-    /** Whether scrolling down. */
-    fun scrollDown(): Boolean = (flags.toInt() and 0xFF000000.toInt()) < 0
-
-    /** Whether scrolling up. */
-    fun scrollUp(): Boolean = (flags.toInt() and 0xFF000000.toInt()) > 0
-
-    /** Whether scrolling left. */
-    fun scrollLeft(): Boolean = (flags.toInt() and 0xFF000000.toInt()) < 0
-
-    /** Whether scrolling right. */
-    fun scrollRight(): Boolean = (flags.toInt() and 0xFF000000.toInt()) > 0
-}
 
 /**
  * Handles a Windows mouse event.
@@ -320,8 +202,8 @@ internal fun getCharForKey(keyEvent: KeyEventRecord): Char? {
     // For now, this is a simplified implementation that relies on uChar when available.
     // A full implementation would use native Windows API calls.
 
-    val isShiftPressed = keyEvent.controlKeyState.hasState(ControlKeyFlags.SHIFT_PRESSED)
-    val isCapsLockOn = keyEvent.controlKeyState.hasState(ControlKeyFlags.CAPSLOCK_ON)
+    val isShiftPressed = keyEvent.controlKeyState.hasState(ControlKeyState.SHIFT_PRESSED)
+    val isCapsLockOn = keyEvent.controlKeyState.hasState(ControlKeyState.CAPSLOCK_ON)
     val desiredCase = if (isShiftPressed xor isCapsLockOn) {
         CharCase.UpperCase
     } else {

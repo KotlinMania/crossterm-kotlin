@@ -5,38 +5,15 @@ package io.github.kotlinmania.crossterm.event.source
 import io.github.kotlinmania.crossterm.event.Event
 import io.github.kotlinmania.crossterm.event.InternalEvent
 import io.github.kotlinmania.crossterm.event.PollTimeout
-import io.github.kotlinmania.crossterm.event.source.Waker
-import io.github.kotlinmania.crossterm.event.sys.windows.EventFlags
-import kotlinx.cinterop.ExperimentalForeignApi
-import kotlinx.cinterop.alloc
-import kotlinx.cinterop.memScoped
-import kotlinx.cinterop.ptr
-import platform.windows.DWORDVar
-import platform.windows.FOCUS_EVENT
-import platform.windows.GetNumberOfConsoleInputEvents
-import platform.windows.GetStdHandle
-import platform.windows.INPUT_RECORD
-import platform.windows.INVALID_HANDLE_VALUE
-import platform.windows.KEY_EVENT
-import platform.windows.MENU_EVENT
-import platform.windows.MOUSE_EVENT
-import platform.windows.ReadConsoleInputW
-import platform.windows.STD_INPUT_HANDLE
-import platform.windows.WINDOW_BUFFER_SIZE_EVENT
-import platform.windows.HANDLE
+import io.github.kotlinmania.crossterm.event.sys.Waker
+import io.github.kotlinmania.crossterm.event.sys.windows.MouseButtonsPressed
+import io.github.kotlinmania.crossterm.event.sys.windows.handleKeyEvent
+import io.github.kotlinmania.crossterm.event.sys.windows.handleMouseEvent
+import io.github.kotlinmania.crossterm.event.sys.windows.WinApiPoll
+import io.github.kotlinmania.crossterm.winapi.Console
+import io.github.kotlinmania.crossterm.winapi.Handle
+import io.github.kotlinmania.crossterm.winapi.InputRecord
 import kotlin.time.Duration
-
-/**
- * Tracks which mouse buttons are currently pressed.
- *
- * Used to determine the correct mouse event type (button down vs. drag)
- * based on the current button state versus the previous state.
- */
-data class MouseButtonsPressed(
-    val left: Boolean = false,
-    val right: Boolean = false,
-    val middle: Boolean = false
-)
 
 /**
  * Windows-specific event source for reading terminal input.
@@ -56,10 +33,9 @@ data class MouseButtonsPressed(
  * ## Platform Support
  *
  * This implementation is only available on Windows (mingw target).
- * On Unix platforms, use [UnixInternalEventSource] instead.
+ * On Unix platforms, use [io.github.kotlinmania.crossterm.event.source.unix.MioInternalEventSource] instead.
  *
  * @see EventSource
- * @see io.github.kotlinmania.crossterm.event.source.unix.MioUnixInternalEventSource
  */
 class WindowsEventSource private constructor(
     private val console: Console,
@@ -79,7 +55,7 @@ class WindowsEventSource private constructor(
          * @throws Exception if the console handle cannot be obtained.
          */
         fun new(): WindowsEventSource {
-            val console = Console.fromHandle(Handle.currentInHandle())
+            val console = Console.from(Handle.currentInHandle())
             return WindowsEventSource(
                 console = console,
                 poll = WinApiPoll.new(),
@@ -116,24 +92,15 @@ class WindowsEventSource private constructor(
             val eventReady = poll.poll(pollTimeout.leftover())
 
             if (eventReady == true) {
-                val numberOfEvents = console.numberOfConsoleInputEvents()
-                if (numberOfEvents != 0u) {
+                val number = console.numberOfConsoleInputEvents()
+                if (number != 0u) {
                     val inputRecord = console.readSingleInputEvent()
 
                     val event: Event? = when (inputRecord) {
                         is InputRecord.KeyEvent -> {
-                            val keyResult = handleKeyEvent(inputRecord.record, surrogateBuffer)
-                            when (keyResult) {
-                                is KeyEventResult.Event -> {
-                                    surrogateBuffer = null
-                                    keyResult.toEvent()
-                                }
-                                is KeyEventResult.Surrogate -> {
-                                    surrogateBuffer = keyResult.value
-                                    null
-                                }
-                                null -> null
-                            }
+                            val (keyEvent, newSurrogate) = handleKeyEvent(inputRecord.record, surrogateBuffer)
+                            surrogateBuffer = newSurrogate
+                            keyEvent
                         }
                         is InputRecord.MouseEvent -> {
                             val mouseEvent = handleMouseEvent(inputRecord.record, mouseButtonsPressed)
@@ -183,306 +150,4 @@ class WindowsEventSource private constructor(
      * @return A [Waker] instance for this event source, or `null` if waking is not supported.
      */
     override fun waker(): Waker? = poll.waker()
-}
-
-/**
- * Result type for key event parsing.
- *
- * Key events can result in either a complete event or a surrogate value
- * that needs to be combined with the next input to form a complete
- * Unicode character.
- */
-internal sealed class KeyEventResult {
-    /**
-     * A complete key event.
-     */
-    data class Event(val event: io.github.kotlinmania.crossterm.event.KeyEvent) : KeyEventResult() {
-        fun toEvent(): io.github.kotlinmania.crossterm.event.Event =
-            io.github.kotlinmania.crossterm.event.Event.Key(event)
-    }
-
-    /**
-     * A UTF-16 surrogate value that needs to be paired with the next surrogate.
-     */
-    data class Surrogate(val value: UShort) : KeyEventResult() {
-        fun toEvent(): io.github.kotlinmania.crossterm.event.Event? = null
-    }
-}
-
-/**
- * Handles a Windows key event record.
- *
- * This function processes a key event from the Windows Console API and
- * converts it to a crossterm key event. It handles UTF-16 surrogate pairs
- * that span multiple input records.
- *
- * @param keyEvent The key event record from the Windows Console API.
- * @param surrogateBuffer The buffered high surrogate from a previous event, if any.
- * @return The parsed key event result, or `null` if the event should be ignored.
- */
-internal fun handleKeyEvent(keyEvent: KeyEventRecord, surrogateBuffer: UShort?): KeyEventResult? {
-    val windowsKeyEvent = parseKeyEventRecord(keyEvent) ?: return null
-
-    return when (windowsKeyEvent) {
-        is WindowsKeyEvent.KeyEvent -> {
-            // Discard any buffered surrogate value if another valid key event comes before the
-            // next surrogate value.
-            KeyEventResult.Event(windowsKeyEvent.event)
-        }
-        is WindowsKeyEvent.Surrogate -> {
-            val char = handleSurrogate(surrogateBuffer, windowsKeyEvent.value)
-            if (char != null) {
-                val modifiers = keyEvent.controlKeyState.toKeyModifiers()
-                KeyEventResult.Event(
-                    io.github.kotlinmania.crossterm.event.KeyEvent.new(
-                        io.github.kotlinmania.crossterm.event.KeyCode.Char(char),
-                        modifiers
-                    )
-                )
-            } else {
-                KeyEventResult.Surrogate(windowsKeyEvent.value)
-            }
-        }
-    }
-}
-
-/**
- * Internal representation of a Windows key event during parsing.
- */
-internal sealed class WindowsKeyEvent {
-    data class KeyEvent(val event: io.github.kotlinmania.crossterm.event.KeyEvent) : WindowsKeyEvent()
-    data class Surrogate(val value: UShort) : WindowsKeyEvent()
-}
-
-/**
- * Handles UTF-16 surrogate pair combining.
- *
- * When the first surrogate is received, it's buffered. When the second
- * surrogate arrives, they are combined to form a complete Unicode character.
- *
- * @param surrogateBuffer The buffered high surrogate, if any.
- * @param newSurrogate The new surrogate value.
- * @return The complete character if both surrogates are now available, or `null` if buffering.
- */
-internal fun handleSurrogate(surrogateBuffer: UShort?, newSurrogate: UShort): Char? {
-    return if (surrogateBuffer != null) {
-        // We have a buffered high surrogate and now received the low surrogate
-        val highSurrogate = surrogateBuffer.toInt().toChar()
-        val lowSurrogate = newSurrogate.toInt().toChar()
-
-        // Decode the surrogate pair to a Unicode code point
-        if (highSurrogate.isHighSurrogate() && lowSurrogate.isLowSurrogate()) {
-            // Decode UTF-16 surrogate pair to code point using standard formula
-            val codePoint = 0x10000 + ((highSurrogate.code - 0xD800) shl 10) + (lowSurrogate.code - 0xDC00)
-            // Convert code point back to chars - for supplementary characters,
-            // use the string representation and get the first char
-            val chars = charArrayOf(highSurrogate, lowSurrogate)
-            chars.concatToString().firstOrNull()
-        } else {
-            null
-        }
-    } else {
-        // Buffer this surrogate for the next event
-        null
-    }
-}
-
-/**
- * Handles a Windows mouse event record.
- *
- * This function converts a Windows mouse event to a crossterm mouse event,
- * taking into account the previous button state to properly detect
- * button press, release, and drag events.
- *
- * @param mouseEvent The mouse event record from the Windows Console API.
- * @param buttonsPressed The previous mouse button state.
- * @return The parsed mouse event, or `null` if the event should be ignored.
- */
-internal fun handleMouseEvent(
-    mouseEvent: MouseEventRecord,
-    buttonsPressed: MouseButtonsPressed
-): Event? {
-    return parseMouseEventRecord(mouseEvent, buttonsPressed)?.let { mouseEventData ->
-        Event.Mouse(mouseEventData)
-    }
-}
-
-// Re-export types from sys.windows module for use in this file.
-// The actual types are defined in parse.kt with full implementations.
-typealias KeyEventRecord = io.github.kotlinmania.crossterm.event.sys.windows.KeyEventRecord
-typealias MouseEventRecord = io.github.kotlinmania.crossterm.event.sys.windows.MouseEventRecord
-typealias ButtonState = io.github.kotlinmania.crossterm.event.sys.windows.ButtonState
-typealias ControlKeyState = io.github.kotlinmania.crossterm.event.sys.windows.ControlKeyState
-typealias Coord = io.github.kotlinmania.crossterm.event.sys.windows.Coord
-
-/**
- * Windows console input record types.
- */
-sealed class InputRecord {
-    data class KeyEvent(val record: KeyEventRecord) : InputRecord()
-    data class MouseEvent(val record: MouseEventRecord) : InputRecord()
-    data class WindowBufferSizeEvent(val record: WindowBufferSizeRecord) : InputRecord()
-    data class FocusEvent(val record: FocusEventRecord) : InputRecord()
-    data object MenuEvent : InputRecord()
-}
-
-/**
- * Window buffer size event record.
- */
-data class WindowBufferSizeRecord(
-    val size: Coord
-)
-
-/**
- * Focus event record.
- */
-data class FocusEventRecord(
-    val setFocus: Boolean
-)
-
-private typealias WindowsHandle = HANDLE?
-
-/**
- * Windows console handle wrapper.
- */
-@OptIn(ExperimentalForeignApi::class)
-class Handle private constructor(internal val value: WindowsHandle) {
-    companion object {
-        @OptIn(ExperimentalForeignApi::class)
-        fun currentInHandle(): Handle {
-            val handle = GetStdHandle(STD_INPUT_HANDLE)
-            if (handle == INVALID_HANDLE_VALUE) {
-                throw IllegalStateException("Failed to get standard input handle")
-            }
-            return Handle(handle)
-        }
-    }
-}
-
-/**
- * Windows console wrapper.
- */
-@OptIn(ExperimentalForeignApi::class)
-class Console private constructor(private val handle: Handle) {
-    companion object {
-        fun fromHandle(handle: Handle): Console = Console(handle)
-    }
-
-    @OptIn(ExperimentalForeignApi::class)
-    fun numberOfConsoleInputEvents(): UInt {
-        val count = memScoped {
-            val events = alloc<DWORDVar>()
-            val result = GetNumberOfConsoleInputEvents(handle.value, events.ptr)
-            if (result == 0) {
-                throw IllegalStateException("GetNumberOfConsoleInputEvents failed")
-            }
-            events.value.toUInt()
-        }
-        return count
-    }
-
-    @OptIn(ExperimentalForeignApi::class)
-    fun readSingleInputEvent(): InputRecord {
-        memScoped {
-            val record = alloc<INPUT_RECORD>()
-            val read = alloc<DWORDVar>()
-            if (ReadConsoleInputW(handle.value, record.ptr, 1u, read.ptr) == 0) {
-                throw IllegalStateException("ReadConsoleInputW failed")
-            }
-
-            return when (record.EventType.toInt()) {
-                KEY_EVENT -> {
-                    val key = record.Event.KeyEvent!!
-                    val keyRecord = KeyEventRecord(
-                        keyDown = key.bKeyDown != 0,
-                        virtualKeyCode = key.wVirtualKeyCode.toUShort(),
-                        virtualScanCode = key.wVirtualScanCode.toUShort(),
-                        uChar = key.uChar.UnicodeChar.toUShort(),
-                        controlKeyState = ControlKeyState(key.dwControlKeyState.toUInt())
-                    )
-                    InputRecord.KeyEvent(keyRecord)
-                }
-                MOUSE_EVENT -> {
-                    val mouse = record.Event.MouseEvent!!
-                    val mouseRecord = MouseEventRecord(
-                        mousePosition = Coord(mouse.dwMousePosition.X, mouse.dwMousePosition.Y),
-                        buttonState = ButtonState(mouse.dwButtonState.toUInt()),
-                        controlKeyState = ControlKeyState(mouse.dwControlKeyState.toUInt()),
-                        eventFlags = when (mouse.dwEventFlags.toInt()) {
-                            0 -> EventFlags.PressOrRelease
-                            0x0002 -> EventFlags.MouseMoved
-                            0x0004 -> EventFlags.DoubleClick
-                            0x0008 -> EventFlags.MouseWheeled
-                            0x0010 -> EventFlags.MouseHwheeled
-                            else -> EventFlags.PressOrRelease
-                        }
-                    )
-                    InputRecord.MouseEvent(mouseRecord)
-                }
-                WINDOW_BUFFER_SIZE_EVENT -> {
-                    val size = record.Event.WindowBufferSizeEvent!!
-                    InputRecord.WindowBufferSizeEvent(
-                        WindowBufferSizeRecord(Coord(size.dwSize.X, size.dwSize.Y))
-                    )
-                }
-                FOCUS_EVENT -> {
-                    val focus = record.Event.FocusEvent!!
-                    InputRecord.FocusEvent(FocusEventRecord(focus.bSetFocus != 0))
-                }
-                MENU_EVENT -> InputRecord.MenuEvent
-                else -> InputRecord.MenuEvent
-            }
-        }
-    }
-}
-
-/**
- * Windows API polling wrapper.
- */
-class WinApiPoll private constructor(
-    private val inner: io.github.kotlinmania.crossterm.event.sys.windows.WinApiPoll
-) {
-    companion object {
-        fun new(): WinApiPoll = WinApiPoll(
-            io.github.kotlinmania.crossterm.event.sys.windows.WinApiPoll.new()
-        )
-
-        fun newWithWaker(): WinApiPoll = WinApiPoll(
-            io.github.kotlinmania.crossterm.event.sys.windows.WinApiPoll.newWithWaker()
-        )
-    }
-
-    fun poll(timeout: Duration?): Boolean? {
-        return try {
-            inner.poll(timeout)
-        } catch (_: io.github.kotlinmania.crossterm.event.sys.windows.WakeInterruptException) {
-            null
-        }
-    }
-
-    fun waker(): Waker? = inner.waker()
-}
-
-/**
- * Parses a Windows key event record into a crossterm key event.
- */
-internal fun parseKeyEventRecord(keyEvent: KeyEventRecord): WindowsKeyEvent? {
-    val result = io.github.kotlinmania.crossterm.event.sys.windows.parseKeyEventRecord(keyEvent)
-    return when (result) {
-        is io.github.kotlinmania.crossterm.event.sys.windows.WindowsKeyEvent.KeyEventWrapper ->
-            WindowsKeyEvent.KeyEvent(result.event)
-        is io.github.kotlinmania.crossterm.event.sys.windows.WindowsKeyEvent.Surrogate ->
-            WindowsKeyEvent.Surrogate(result.value)
-        null -> null
-    }
-}
-
-/**
- * Parses a Windows mouse event record into a crossterm mouse event.
- */
-internal fun parseMouseEventRecord(
-    mouseEvent: MouseEventRecord,
-    buttonsPressed: MouseButtonsPressed
-): io.github.kotlinmania.crossterm.event.MouseEvent? {
-    return io.github.kotlinmania.crossterm.event.sys.windows.parseMouseEventRecord(mouseEvent, buttonsPressed)
 }

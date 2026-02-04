@@ -51,3 +51,28 @@ package io.github.kotlinmania.crossterm.event.sys
  * In Kotlin Multiplatform, platform-specific types are resolved through
  * expect/actual declarations in the respective source sets.
  */
+
+/**
+ * Interface for waking up blocked event reading operations.
+ *
+ * Used primarily for event-stream functionality to allow external
+ * signals to interrupt a blocking poll operation. The waker is
+ * typically used in async contexts where cancellation is needed.
+ *
+ * On Unix systems, this is typically implemented using a self-pipe
+ * or eventfd mechanism. On Windows, this uses Windows event objects.
+ *
+ * This corresponds to the Rust type re-exported in `event::sys::Waker`.
+ */
+interface Waker {
+    /**
+     * Wakes up any blocked poll/read operation.
+     *
+     * This method signals the event source to return from a blocking
+     * poll/read call with `null`, allowing the caller to handle
+     * cancellation or other external events.
+     *
+     * This method is safe to call from any thread.
+     */
+    fun wake()
+}

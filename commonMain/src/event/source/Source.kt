@@ -2,6 +2,7 @@
 package io.github.kotlinmania.crossterm.event.source
 
 import io.github.kotlinmania.crossterm.event.InternalEvent
+import io.github.kotlinmania.crossterm.event.sys.Waker
 import kotlin.time.Duration
 
 /**
@@ -37,27 +38,4 @@ interface EventSource {
      * @return A [Waker] instance for this event source, or `null` if waking is not supported.
      */
     fun waker(): Waker? = null
-}
-
-/**
- * Interface for waking up blocked event reading operations.
- *
- * Used primarily for event-stream functionality to allow external
- * signals to interrupt a blocking poll operation. The waker is
- * typically used in async contexts where cancellation is needed.
- *
- * On Unix systems, this is typically implemented using a self-pipe
- * or eventfd mechanism. On Windows, this uses Windows event objects.
- */
-interface Waker {
-    /**
-     * Wakes up any blocked poll/read operation.
-     *
-     * This method signals the event source to return from a blocking
-     * [EventSource.tryRead] call with `null`, allowing the caller to
-     * handle cancellation or other external events.
-     *
-     * This method is safe to call from any thread.
-     */
-    fun wake()
 }

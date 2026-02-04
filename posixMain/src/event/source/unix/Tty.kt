@@ -3,7 +3,7 @@ package io.github.kotlinmania.crossterm.event.source.unix
 
 import io.github.kotlinmania.crossterm.event.*
 import io.github.kotlinmania.crossterm.event.source.EventSource
-import io.github.kotlinmania.crossterm.event.source.Waker
+import io.github.kotlinmania.crossterm.event.sys.Waker
 import io.github.kotlinmania.crossterm.event.sys.unix.TtyWaker
 import io.github.kotlinmania.crossterm.terminal.sys.isRawModeEnabled
 import io.github.kotlinmania.crossterm.terminal.sys.pollWrapper

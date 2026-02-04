@@ -43,7 +43,7 @@ inline std::optional<std::string> extract_source_annotation(const fs::path& file
 
     // Regex: // port-lint: source <path> OR // port-lint: tests <path>
     std::regex pattern(R"(//\s*port-lint:\s*(?:source|tests)\s+(.+))", std::regex::icase);
-
+    
     std::string line;
     int line_count = 0;
     while (std::getline(file, line) && line_count++ < 50) {
@@ -56,7 +56,7 @@ inline std::optional<std::string> extract_source_annotation(const fs::path& file
             return path_str;
         }
     }
-
+    
     return std::nullopt;
 }
 

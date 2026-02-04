@@ -5,7 +5,7 @@ import io.github.kotlinmania.crossterm.event.Event
 import io.github.kotlinmania.crossterm.event.InternalEvent
 import io.github.kotlinmania.crossterm.event.PollTimeout
 import io.github.kotlinmania.crossterm.event.source.EventSource
-import io.github.kotlinmania.crossterm.event.source.Waker
+import io.github.kotlinmania.crossterm.event.sys.Waker
 import io.github.kotlinmania.crossterm.event.sys.unix.MioWaker
 import io.github.kotlinmania.crossterm.terminal.sys.pollWrapper
 import kotlinx.cinterop.CArrayPointer

@@ -1,7 +1,7 @@
 // port-lint: source event/stream.rs
 package io.github.kotlinmania.crossterm.event
 
-import io.github.kotlinmania.crossterm.event.source.Waker
+import io.github.kotlinmania.crossterm.event.sys.Waker
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers

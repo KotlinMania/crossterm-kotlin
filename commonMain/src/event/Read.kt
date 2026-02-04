@@ -2,7 +2,7 @@
 package io.github.kotlinmania.crossterm.event
 
 import io.github.kotlinmania.crossterm.event.source.EventSource
-import io.github.kotlinmania.crossterm.event.source.Waker
+import io.github.kotlinmania.crossterm.event.sys.Waker
 import kotlin.time.Duration
 
 /**

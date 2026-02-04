@@ -17,7 +17,7 @@ import platform.windows.ReleaseSemaphore
  */
 class Waker private constructor(
     private var semaphore: Semaphore
-) : io.github.kotlinmania.crossterm.event.source.Waker {
+) : io.github.kotlinmania.crossterm.event.sys.Waker {
     private val lock = ReentrantLock()
 
     companion object {
