@@ -1,8 +1,6 @@
 // port-lint: source style/types/colored.rs
 package io.github.kotlinmania.crossterm.style.types
 
-import kotlin.concurrent.Volatile
-
 /**
  * Represents a foreground or background color.
  *
@@ -16,14 +14,18 @@ sealed class Colored : Comparable<Colored> {
      *
      * @param color The color to use for the foreground
      */
-    data class ForegroundColor(val color: Color) : Colored()
+    data class ForegroundColor(val color: Color) : Colored() {
+        override fun toString(): String = super.toString()
+    }
 
     /**
      * A background color.
      *
      * @param color The color to use for the background
      */
-    data class BackgroundColor(val color: Color) : Colored()
+    data class BackgroundColor(val color: Color) : Colored() {
+        override fun toString(): String = super.toString()
+    }
 
     /**
      * An underline color.
@@ -32,7 +34,9 @@ sealed class Colored : Comparable<Colored> {
      *
      * @param color The color to use for underlines
      */
-    data class UnderlineColor(val color: Color) : Colored()
+    data class UnderlineColor(val color: Color) : Colored() {
+        override fun toString(): String = super.toString()
+    }
 
     /**
      * Returns the ordinal value for comparison purposes.
@@ -149,13 +153,6 @@ sealed class Colored : Comparable<Colored> {
         private val initialAnsiColorDisabled: Boolean by lazy { ansiColorDisabled() }
 
         /**
-         * Volatile override for the disabled state.
-         * When null, uses the lazy-initialized value. When set, overrides it.
-         */
-        @Volatile
-        private var ansiColorDisabledOverride: Boolean? = null
-
-        /**
          * Parse an ANSI foreground or background color.
          *
          * This is the string that would appear within an `ESC [ <str> m` escape sequence, as found in
@@ -226,7 +223,7 @@ sealed class Colored : Comparable<Colored> {
          * @return `true` if ANSI colors are disabled
          */
         fun ansiColorDisabledMemoized(): Boolean {
-            return ansiColorDisabledOverride ?: initialAnsiColorDisabled
+            return AnsiColorDisabledOverride.get() ?: initialAnsiColorDisabled
         }
 
         /**
@@ -240,7 +237,7 @@ sealed class Colored : Comparable<Colored> {
             // Force the one-time initializer to run first (mimics Rust behavior)
             @Suppress("UNUSED_VARIABLE")
             val unused = initialAnsiColorDisabled
-            ansiColorDisabledOverride = value
+            AnsiColorDisabledOverride.set(value)
         }
     }
 }

@@ -289,5 +289,7 @@ sealed class Color : Comparable<Color> {
  */
 internal fun parseNextU8(iter: Iterator<String>): UByte? {
     if (!iter.hasNext()) return null
-    return iter.next().toUByteOrNull()
+    val value = iter.next().toIntOrNull() ?: return null
+    if (value < 0 || value > 255) return null
+    return value.toUByte()
 }
