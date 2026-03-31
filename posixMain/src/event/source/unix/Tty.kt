@@ -4,7 +4,7 @@ package io.github.kotlinmania.crossterm.event.source.unix
 import io.github.kotlinmania.crossterm.event.*
 import io.github.kotlinmania.crossterm.event.source.EventSource
 import io.github.kotlinmania.crossterm.event.sys.Waker
-import io.github.kotlinmania.crossterm.event.sys.unix.TtyWaker
+import io.github.kotlinmania.crossterm.event.sys.unix.waker.TtyWaker
 import io.github.kotlinmania.crossterm.terminal.sys.isRawModeEnabled
 import io.github.kotlinmania.crossterm.terminal.sys.pollWrapper
 import io.github.kotlinmania.crossterm.terminal.sys.size
@@ -46,14 +46,7 @@ private class WakePipe(
             val (receiverFd, senderFd) = nonblockingUnixPair()
             return WakePipe(
                 receiverFd = receiverFd,
-                waker = TtyWaker.new {
-                    // Write a single byte to wake up the poll
-                    memScoped {
-                        val buf = allocArray<ByteVar>(1)
-                        buf[0] = 0
-                        write(senderFd, buf, 1u)
-                    }
-                }
+                waker = TtyWaker.new(senderFd)
             )
         }
     }

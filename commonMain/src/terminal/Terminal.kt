@@ -131,6 +131,36 @@ data object DisableLineWrap : Command {
 }
 
 /**
+ * A command that begins a synchronized update.
+ *
+ * When the synchronization mode is enabled, following render calls will keep
+ * rendering the last rendered state. The terminal emulator keeps processing
+ * incoming text and sequences. When the synchronized update mode is disabled
+ * again the renderer may fetch the latest screen buffer state again,
+ * effectively avoiding the tearing effect.
+ *
+ * Use [EndSynchronizedUpdate] to end the synchronized update.
+ *
+ * Ported from Rust crossterm/src/terminal.rs BeginSynchronizedUpdate.
+ */
+data object BeginSynchronizedUpdate : Command {
+    override fun writeAnsi(writer: Appendable) {
+        writer.append("\u001B[?2026h")
+    }
+}
+
+/**
+ * A command that ends a synchronized update.
+ *
+ * Ported from Rust crossterm/src/terminal.rs EndSynchronizedUpdate.
+ */
+data object EndSynchronizedUpdate : Command {
+    override fun writeAnsi(writer: Appendable) {
+        writer.append("\u001B[?2026l")
+    }
+}
+
+/**
  * Terminal size in columns and rows.
  */
 data class TerminalSize(

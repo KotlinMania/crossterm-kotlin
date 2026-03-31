@@ -6,11 +6,11 @@ import io.github.kotlinmania.crossterm.event.InternalEvent
 import io.github.kotlinmania.crossterm.event.PollTimeout
 import io.github.kotlinmania.crossterm.event.source.EventSource
 import io.github.kotlinmania.crossterm.event.sys.Waker
-import io.github.kotlinmania.crossterm.event.sys.unix.MioWaker
+import io.github.kotlinmania.crossterm.event.sys.unix.waker.MioWaker
 import io.github.kotlinmania.crossterm.terminal.sys.pollWrapper
 import kotlinx.cinterop.CArrayPointer
 import kotlinx.cinterop.ExperimentalForeignApi
-import kotlinx.cinterop.IntVar
+
 import kotlinx.cinterop.addressOf
 import kotlinx.cinterop.allocArray
 import kotlinx.cinterop.get
@@ -30,10 +30,8 @@ import platform.posix.errno
 import platform.posix.fcntl
 import platform.posix.isatty
 import platform.posix.open
-import platform.posix.pipe
 import platform.posix.pollfd
 import platform.posix.read
-import platform.posix.write
 import kotlin.time.Duration
 
 /**
@@ -99,30 +97,19 @@ class MioInternalEventSource private constructor(
 
     /**
      * Waker for interrupting poll operations (event-stream support).
+     *
+     * MioWaker internally creates a pipe; use [MioWaker.pollFd] to get
+     * the read end for poll() and [MioWaker.wake] to signal from another thread.
      */
-    private var mioWaker: MioWaker? = null
-
-    /**
-     * Pipe for wake signaling.
-     * Index 0 is the read end, index 1 is the write end.
-     */
-    private val wakePipe: IntArray? = createWakePipe()
+    private val mioWaker: MioWaker? = try {
+        MioWaker.new()
+    } catch (_: IllegalStateException) {
+        null
+    }
 
     init {
         // Set TTY to non-blocking mode
         setNonBlocking(ttyFd)
-
-        // Set up waker if wake pipe was created
-        wakePipe?.let { pipeArr ->
-            setNonBlocking(pipeArr[0])
-            mioWaker = MioWaker.new {
-                // Write a single byte to the pipe to wake up poll
-                val wakeSignal = byteArrayOf(0)
-                wakeSignal.usePinned { pinned ->
-                    write(pipeArr[1], pinned.addressOf(0), 1uL)
-                }
-            }
-        }
     }
 
     companion object {
@@ -163,22 +150,6 @@ class MioInternalEventSource private constructor(
                     throw IllegalStateException("Failed to open /dev/tty: errno=$errno")
                 }
                 MioInternalEventSource(fd, closeOnDrop = true)
-            }
-        }
-
-        /**
-         * Creates a pipe for wake signaling.
-         *
-         * @return An array of [readFd, writeFd], or null if pipe creation fails.
-         */
-        private fun createWakePipe(): IntArray? {
-            return memScoped {
-                val pipeFds: CArrayPointer<IntVar> = allocArray(2)
-                if (pipe(pipeFds) == 0) {
-                    intArrayOf(pipeFds[0], pipeFds[1])
-                } else {
-                    null
-                }
             }
         }
 
@@ -243,9 +214,10 @@ class MioInternalEventSource private constructor(
             }
 
             // Check for wake signal
-            wakePipe?.let { pipeArr ->
-                if (consumeWakeSignal(pipeArr[0])) {
-                    // Poll was woken up - return interrupted error via exception
+            mioWaker?.let { waker ->
+                if (consumeWakeSignal(waker.pollFd())) {
+                    // Poll was woken up - reset waker and throw interrupted error
+                    waker.reset()
                     throw MioInterruptedException("Poll operation was woken up by Waker::wake")
                 }
             }
@@ -265,7 +237,8 @@ class MioInternalEventSource private constructor(
      */
     private fun doPoll(timeoutMs: Int): Int {
         return memScoped {
-            val numFds = if (wakePipe != null) 2 else 1
+            val wakeFd = mioWaker?.pollFd()
+            val numFds = if (wakeFd != null) 2 else 1
             val fds: CArrayPointer<pollfd> = allocArray(numFds)
 
             // TTY file descriptor
@@ -274,8 +247,8 @@ class MioInternalEventSource private constructor(
             fds[TTY_TOKEN].revents = 0
 
             // Wake pipe read end (if available)
-            wakePipe?.let { pipeArr ->
-                fds[1].fd = pipeArr[0]
+            if (wakeFd != null) {
+                fds[1].fd = wakeFd
                 fds[1].events = POLLIN.toShort()
                 fds[1].revents = 0
             }
@@ -350,10 +323,10 @@ class MioInternalEventSource private constructor(
      *
      * @return The waker, or null if wake support is not available.
      */
-    override fun waker(): Waker? = mioWaker?.let { mw ->
-        // Adapter from MioWaker (event.Waker) to source.Waker
+    override fun waker(): Waker? = mioWaker?.let { waker ->
+        // Adapter from MioWaker to source.Waker
         object : Waker {
-            override fun wake() = mw.wake()
+            override fun wake() = waker.wake()
         }
     }
 
@@ -367,10 +340,7 @@ class MioInternalEventSource private constructor(
         if (closeOnDrop) {
             close(ttyFd)
         }
-        wakePipe?.let { pipeArr ->
-            close(pipeArr[0])
-            close(pipeArr[1])
-        }
+        mioWaker?.close()
     }
 }
 

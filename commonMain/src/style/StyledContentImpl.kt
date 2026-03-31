@@ -2,6 +2,7 @@
 package io.github.kotlinmania.crossterm.style
 
 import io.github.kotlinmania.crossterm.Command
+import io.github.kotlinmania.crossterm.ansiString
 
 /**
  * A command that sets the underline color.

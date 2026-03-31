@@ -32,3 +32,6 @@ tasks_new.json.lock
 
 # JS/WASM artifacts
 /kotlin-js-store/
+.DS_Store
+mingwMain/src/event/sys/windows/parse.kt.backup
+.gitignore
