@@ -5,6 +5,7 @@ package io.github.kotlinmania.crossterm.event.sys.windows
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.allocArray
 import kotlinx.cinterop.memScoped
+import kotlinx.cinterop.set
 import platform.windows.GetStdHandle
 import platform.windows.INVALID_HANDLE_VALUE
 import platform.windows.STD_INPUT_HANDLE
@@ -126,7 +127,7 @@ private fun waitForMultipleObjects(handles: List<WindowsHandle>, timeout: UInt):
     memScoped {
         val handleArray = allocArray<HANDLEVar>(handles.size)
         handles.forEachIndexed { idx, handle ->
-            handleArray[idx].value = handle ?: error("Null handle passed to waitForMultipleObjects")
+            handleArray[idx] = handle ?: error("Null handle passed to waitForMultipleObjects")
         }
 
         return WaitForMultipleObjects(

@@ -1,21 +1,14 @@
+// port-lint: source terminal/sys/unix.rs
 package io.github.kotlinmania.crossterm.terminal.sys
 
-import kotlinx.cinterop.CArrayPointer
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.alloc
 import kotlinx.cinterop.memScoped
 import kotlinx.cinterop.ptr
-import platform.posix.TIOCGWINSZ
 import platform.posix.TCSANOW
-import platform.posix.poll
-import platform.posix.pollfd
 import platform.posix.tcgetattr
 import platform.posix.tcsetattr
 import platform.posix.termios
-
-// macOS TIOCGWINSZ value from <sys/ioctl.h>
-@Suppress("REDUNDANT_CALL_OF_CONVERSION_METHOD")
-internal actual val TIOCGWINSZ_VALUE: ULong = TIOCGWINSZ.toULong()
 
 // Termios flag constants for macOS
 private const val IGNBRK: ULong = 0x00000001u
@@ -36,9 +29,6 @@ private const val CSIZE: ULong = 0x00000300u
 private const val PARENB: ULong = 0x00001000u
 private const val CS8: ULong = 0x00000300u
 
-/**
- * Stores original termios settings for restoration.
- */
 private data class SavedTermios(
     val c_iflag: ULong,
     val c_oflag: ULong,
@@ -48,10 +38,6 @@ private data class SavedTermios(
 
 private var savedTermios: SavedTermios? = null
 
-/**
- * macOS implementation of enabling raw mode.
- * On macOS, tcflag_t is ULong (64-bit).
- */
 @OptIn(ExperimentalForeignApi::class)
 internal actual fun enableRawModeImpl() {
     memScoped {
@@ -62,7 +48,6 @@ internal actual fun enableRawModeImpl() {
             throw IllegalStateException("Failed to get terminal attributes")
         }
 
-        // Save original mode
         savedTermios = SavedTermios(
             c_iflag = originalTermios.c_iflag,
             c_oflag = originalTermios.c_oflag,
@@ -76,7 +61,6 @@ internal actual fun enableRawModeImpl() {
         rawTermios.c_cflag = originalTermios.c_cflag
         rawTermios.c_lflag = originalTermios.c_lflag
 
-        // Apply raw mode settings (equivalent to cfmakeraw)
         val iflagMask = IGNBRK or BRKINT or PARMRK or ISTRIP or INLCR or IGNCR or ICRNL or IXON
         rawTermios.c_iflag = rawTermios.c_iflag and iflagMask.inv()
 
@@ -94,9 +78,6 @@ internal actual fun enableRawModeImpl() {
     }
 }
 
-/**
- * macOS implementation of disabling raw mode.
- */
 @OptIn(ExperimentalForeignApi::class)
 internal actual fun disableRawModeImpl() {
     val saved = savedTermios ?: return
@@ -122,11 +103,3 @@ internal actual fun disableRawModeImpl() {
     }
 }
 
-/**
- * Platform-specific poll wrapper for macOS.
- * On macOS, nfds_t is UInt (32-bit).
- */
-@OptIn(ExperimentalForeignApi::class)
-internal actual fun pollWrapper(fds: CArrayPointer<pollfd>, numFds: Int, timeoutMs: Int): Int {
-    return poll(fds, numFds.toUInt(), timeoutMs)
-}

@@ -142,8 +142,7 @@ sealed class KeyCode {
 /**
  * Key modifiers (Shift, Ctrl, Alt, etc.)
  */
-@kotlin.jvm.JvmInline
-value class KeyModifiers(val bits: UByte) {
+data class KeyModifiers(val bits: UByte) {
     companion object {
         val NONE = KeyModifiers(0u)
         val SHIFT = KeyModifiers(0b0000_0001u)
@@ -177,8 +176,7 @@ enum class KeyEventKind {
 /**
  * Keyboard state.
  */
-@kotlin.jvm.JvmInline
-value class KeyEventState(val bits: UByte) {
+data class KeyEventState(val bits: UByte) {
     companion object {
         val NONE = KeyEventState(0u)
         val KEYPAD = KeyEventState(0b0000_0001u)

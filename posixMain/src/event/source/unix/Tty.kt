@@ -6,7 +6,6 @@ import io.github.kotlinmania.crossterm.event.source.EventSource
 import io.github.kotlinmania.crossterm.event.sys.Waker
 import io.github.kotlinmania.crossterm.event.sys.unix.waker.TtyWaker
 import io.github.kotlinmania.crossterm.terminal.sys.isRawModeEnabled
-import io.github.kotlinmania.crossterm.terminal.sys.pollWrapper
 import io.github.kotlinmania.crossterm.terminal.sys.size
 import kotlinx.cinterop.*
 import platform.posix.*
@@ -210,7 +209,7 @@ class TtyInternalEventSource private constructor(
                 // Calculate poll timeout in milliseconds
                 val timeoutMs = leftover?.inWholeMilliseconds?.toInt() ?: -1
 
-                val pollResult = pollWrapper(fds, numFds, timeoutMs)
+                val pollResult = poll(fds, numFds.convert(), timeoutMs)
 
                 when {
                     pollResult < 0 -> {

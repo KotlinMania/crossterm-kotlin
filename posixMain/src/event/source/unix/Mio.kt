@@ -7,12 +7,12 @@ import io.github.kotlinmania.crossterm.event.PollTimeout
 import io.github.kotlinmania.crossterm.event.source.EventSource
 import io.github.kotlinmania.crossterm.event.sys.Waker
 import io.github.kotlinmania.crossterm.event.sys.unix.waker.MioWaker
-import io.github.kotlinmania.crossterm.terminal.sys.pollWrapper
 import kotlinx.cinterop.CArrayPointer
 import kotlinx.cinterop.ExperimentalForeignApi
 
 import kotlinx.cinterop.addressOf
 import kotlinx.cinterop.allocArray
+import kotlinx.cinterop.convert
 import kotlinx.cinterop.get
 import kotlinx.cinterop.memScoped
 import kotlinx.cinterop.set
@@ -30,6 +30,7 @@ import platform.posix.errno
 import platform.posix.fcntl
 import platform.posix.isatty
 import platform.posix.open
+import platform.posix.poll
 import platform.posix.pollfd
 import platform.posix.read
 import kotlin.time.Duration
@@ -253,7 +254,7 @@ class MioInternalEventSource private constructor(
                 fds[1].revents = 0
             }
 
-            pollWrapper(fds, numFds, timeoutMs)
+            poll(fds, numFds.convert(), timeoutMs)
         }
     }
 

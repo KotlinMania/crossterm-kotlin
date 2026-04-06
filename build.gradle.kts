@@ -1,11 +1,13 @@
 import com.vanniktech.maven.publish.SonatypeHost
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.plugin.mpp.apple.XCFramework
+import org.jetbrains.kotlin.gradle.targets.native.tasks.KotlinNativeTest
 
 plugins {
     kotlin("multiplatform") version "2.3.0"
     id("com.android.kotlin.multiplatform.library") version "8.6.0"
     id("com.vanniktech.maven.publish") version "0.30.0"
+    signing
 }
 
 group = "io.github.kotlinmania"
@@ -105,26 +107,41 @@ kotlin {
             kotlin.srcDir("nativeMain/src")
         }
 
-        // desktopPosixMain contains terminal-specific implementations for desktop POSIX (macOS, Linux)
-        // This is separate from iOS which doesn't have traditional terminal access
+        // desktopPosixMain: shared desktop code that must compile as metadata.
+        // IMPORTANT: do not put any `platform.*` (e.g. `platform.posix`) references here.
         val desktopPosixMain by creating {
             dependsOn(nativeMain)
-            kotlin.srcDir("posixMain/src")
+            kotlin.srcDir("desktopPosixMain/src")
         }
 
-        // macOS and Linux use desktop POSIX terminal code
+        // IMPORTANT: `macosMain` / `linuxMain` are *shared* between multiple native targets and
+        // compile as metadata. Keep them free of `platform.*` references.
         val macosMain by getting {
             dependsOn(desktopPosixMain)
-            kotlin.srcDir("macosMain/src")
         }
         val linuxMain by getting {
             dependsOn(desktopPosixMain)
+        }
+
+        // Leaf native targets can contain `platform.posix` code.
+        val linuxX64Main by getting {
+            dependsOn(desktopPosixMain)
+            kotlin.srcDir("posixMain/src")
             kotlin.srcDir("linuxMain/src")
+        }
+        val macosArm64Main by getting {
+            dependsOn(desktopPosixMain)
+            kotlin.srcDir("posixMain/src")
+            kotlin.srcDir("macosArm64Main/src")
+        }
+        val macosX64Main by getting {
+            dependsOn(desktopPosixMain)
+            kotlin.srcDir("posixMain/src")
+            kotlin.srcDir("macosX64Main/src")
         }
 
         // iOS needs its own stubs since it doesn't have terminal access
         val iosMain by getting {
-            dependsOn(nativeMain)
             kotlin.srcDir("iosMain/src")
         }
 
@@ -155,6 +172,19 @@ kotlin {
         compileSdk = 34
         minSdk = 24
     }
+}
+
+val enableIosSimulatorTests =
+    providers.gradleProperty("enableIosSimulatorTests").map { it.toBoolean() }.orElse(false)
+
+tasks.withType<KotlinNativeTest>().configureEach {
+    if (!enableIosSimulatorTests.get() && (name == "iosX64Test" || name == "iosSimulatorArm64Test")) {
+        enabled = false
+    }
+}
+
+signing {
+    useGpgCmd()
 }
 
 mavenPublishing {

@@ -9,8 +9,7 @@ package io.github.kotlinmania.crossterm.event
  *
  * Alternate keys and Unicode codepoints are not yet supported by crossterm.
  */
-@kotlin.jvm.JvmInline
-value class KeyboardEnhancementFlags(val bits: UByte) {
+data class KeyboardEnhancementFlags(val bits: UByte) {
     companion object {
         /** Empty flags. */
         val NONE = KeyboardEnhancementFlags(0u)

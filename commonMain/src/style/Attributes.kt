@@ -26,8 +26,7 @@ package io.github.kotlinmania.crossterm.style
  * println(styled.has(Attribute.Bold))   // false
  * ```
  */
-@kotlin.jvm.JvmInline
-value class Attributes(val bits: UInt = 0u) {
+data class Attributes(val bits: UInt = 0u) {
 
     /**
      * Returns a copy of the bitset with the given attribute set.
