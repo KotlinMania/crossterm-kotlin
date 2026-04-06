@@ -166,53 +166,21 @@ data object ResetColor : Command {
 
 ## Swarm Task Management
 
-### Initialize Tasks
+### Task Assignment Disabled
+
+This repo vendors a fork of `ast_distance` where task-assignment flags are **disabled**:
+`--init-tasks`, `--tasks`, `--assign`, `--complete`, `--release`, `--agent`, `--task-file`, `--override`.
+
+Use file-to-file comparisons and folder-level deep checks instead:
 
 ```bash
 cd /Volumes/stuff/Projects/kotlinmania/crossterm-kotlin
-./tools/ast_distance/build/ast_distance --init-tasks tmp/crossterm-rs/src rust commonMain/src kotlin tasks.json AGENTS.md
-```
 
-### Swarm Agent Workflow
+# Compare a single Rust file to a Kotlin file
+./tools/ast_distance/build/ast_distance tmp/crossterm-rs/src/<file>.rs commonMain/src/<path>/<File>.kt
 
-Each agent follows this loop:
-
-```
-1. GET ASSIGNMENT
-   ./tools/ast_distance/build/ast_distance --assign tasks.json <agent-id>
-
-2. READ SOURCE
-   Read the Rust file at the path shown
-
-3. CREATE KOTLIN FILE
-   - Create proper folder structure matching package
-   - Add port-lint header as FIRST line
-   - Port all types, functions, and docs
-
-4. VERIFY
-   ./tools/ast_distance/build/ast_distance tmp/crossterm-rs/src/<file>.rs commonMain/src/<path>/<File>.kt
-   Target: >= 0.85 similarity
-
-5. COMPLETE
-   ./tools/ast_distance/build/ast_distance --complete tasks.json <qualified-name>
-
-6. REPEAT from step 1
-```
-
-### Task Commands
-
-```bash
-# View all tasks
-./tools/ast_distance/build/ast_distance --tasks tasks.json
-
-# Assign next task to an agent
-./tools/ast_distance/build/ast_distance --assign tasks.json agent-001
-
-# Mark task complete
-./tools/ast_distance/build/ast_distance --complete tasks.json event.filter
-
-# Release task back to pool (if agent can't finish)
-./tools/ast_distance/build/ast_distance --release tasks.json event.filter
+# Deep comparison over directories
+./tools/ast_distance/build/ast_distance --deep tmp/crossterm-rs/src rust commonMain/src kotlin
 ```
 
 ---

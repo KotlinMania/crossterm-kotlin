@@ -7,11 +7,10 @@ plugins {
     kotlin("multiplatform") version "2.3.0"
     id("com.android.kotlin.multiplatform.library") version "8.6.0"
     id("com.vanniktech.maven.publish") version "0.30.0"
-    signing
 }
 
 group = "io.github.kotlinmania"
-version = "0.1.0"
+version = "0.1.1"
 
 // Setup Android SDK location and licenses automatically
 val sdkDir = file(".android-sdk")
@@ -27,15 +26,9 @@ if (!licenseFile.exists()) {
         """.trimIndent()
     )
 }
-val localProperties: File? = rootProject.file("local.properties")
-if (!localProperties?.exists()!!) {
-    localProperties.writeText("sdk.dir=${sdkDir.absolutePath}")
-}
-
-repositories {
-    mavenCentral()
-    google()
-}
+val localProperties: File = rootProject.file("local.properties")
+val sdkDirPropertyValue = sdkDir.absolutePath.replace("\\", "/")
+localProperties.writeText("sdk.dir=$sdkDirPropertyValue")
 
 kotlin {
     applyDefaultHierarchyTemplate()
@@ -181,10 +174,6 @@ tasks.withType<KotlinNativeTest>().configureEach {
     if (!enableIosSimulatorTests.get() && (name == "iosX64Test" || name == "iosSimulatorArm64Test")) {
         enabled = false
     }
-}
-
-signing {
-    useGpgCmd()
 }
 
 mavenPublishing {

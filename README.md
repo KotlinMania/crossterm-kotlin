@@ -42,7 +42,7 @@ Crossterm-Kotlin is a Kotlin Multiplatform library for terminal manipulation. It
 
 ```kotlin
 dependencies {
-    implementation("io.github.kotlinmania:crossterm-kotlin:0.1.0")
+    implementation("io.github.kotlinmania:crossterm-kotlin:0.1.1")
 }
 ```
 
@@ -50,7 +50,7 @@ dependencies {
 
 ```groovy
 dependencies {
-    implementation 'io.github.kotlinmania:crossterm-kotlin:0.1.0'
+    implementation 'io.github.kotlinmania:crossterm-kotlin:0.1.1'
 }
 ```
 
