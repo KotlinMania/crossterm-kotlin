@@ -25,7 +25,13 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
 
       - name: Build and test
-        run: ./gradlew allTests --no-configuration-cache
+        run: |
+          arch="$(uname -m)"
+          if [ "$arch" = "arm64" ]; then
+            ./gradlew macosArm64Test --no-configuration-cache
+          else
+            ./gradlew macosX64Test --no-configuration-cache
+          fi
 
   build-linux:
     name: Build and Test (Linux)
@@ -43,6 +49,9 @@ jobs:
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
+
+      - name: Install system dependencies
+        run: sudo apt-get update && sudo apt-get install -y libcurl4-openssl-dev
 
       - name: Build and test
         run: ./gradlew linuxX64Test --no-configuration-cache
