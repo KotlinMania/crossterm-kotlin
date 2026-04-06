@@ -129,7 +129,7 @@ class WindowsEventSource private constructor(
                     }
 
                     if (event != null) {
-                        return InternalEvent.EventWrapper(event)
+                        return InternalEvent.Event(event)
                     }
                 }
             }

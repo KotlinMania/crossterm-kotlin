@@ -1,6 +1,184 @@
 // port-lint: source event.rs
 package io.github.kotlinmania.crossterm.event
 
+import io.github.kotlinmania.crossterm.Command
+import io.github.kotlinmania.crossterm.csi
+import kotlin.time.Duration
+
+/**
+ * Represents special flags that tell compatible terminals to add extra information to keyboard events.
+ *
+ * See <https://sw.kovidgoyal.net/kitty/keyboard-protocol/#progressive-enhancement> for more information.
+ *
+ * Alternate keys and Unicode codepoints are not yet supported by crossterm.
+ */
+data class KeyboardEnhancementFlags(val bits: UByte) {
+    companion object {
+        val NONE = KeyboardEnhancementFlags(0u)
+
+        /**
+         * Represent Escape and modified keys using CSI-u sequences, so they can be unambiguously read.
+         */
+        val DISAMBIGUATE_ESCAPE_CODES = KeyboardEnhancementFlags(0b0000_0001u)
+
+        /**
+         * Add extra events with [KeyEvent.kind] set to [KeyEventKind.Repeat] or [KeyEventKind.Release]
+         * when keys are autorepeated or released.
+         */
+        val REPORT_EVENT_TYPES = KeyboardEnhancementFlags(0b0000_0010u)
+
+        /**
+         * Send alternate keycodes in addition to the base keycode.
+         *
+         * See <https://sw.kovidgoyal.net/kitty/keyboard-protocol/#key-codes>.
+         */
+        val REPORT_ALTERNATE_KEYS = KeyboardEnhancementFlags(0b0000_0100u)
+
+        /**
+         * Represent all keyboard events as CSI-u sequences. This is required to get repeat/release events
+         * for plain-text keys.
+         */
+        val REPORT_ALL_KEYS_AS_ESCAPE_CODES = KeyboardEnhancementFlags(0b0000_1000u)
+
+        fun empty(): KeyboardEnhancementFlags = NONE
+    }
+
+    fun bits(): UByte = bits
+
+    operator fun plus(other: KeyboardEnhancementFlags): KeyboardEnhancementFlags =
+        KeyboardEnhancementFlags((bits.toInt() or other.bits.toInt()).toUByte())
+
+    operator fun contains(other: KeyboardEnhancementFlags): Boolean =
+        (bits.toInt() and other.bits.toInt()) == other.bits.toInt()
+}
+
+/**
+ * Checks if there is an [Event] available.
+ *
+ * Returns `true` if an [Event] is available otherwise it returns `false`.
+ *
+ * `true` guarantees that subsequent call to [read] won't block.
+ */
+fun poll(timeout: Duration): Boolean =
+    io.github.kotlinmania.crossterm.event.poll(timeout, EventFilter)
+
+/**
+ * Reads a single [Event].
+ *
+ * This function blocks until an [Event] is available. Combine it with [poll] to get non-blocking reads.
+ */
+fun read(): Event {
+    return when (val internalEvent = io.github.kotlinmania.crossterm.event.read(EventFilter)) {
+        is InternalEvent.Event -> internalEvent.event
+        else -> error("read(EventFilter) returned non-Event internal event: $internalEvent")
+    }
+}
+
+/**
+ * Attempts to read a single [Event] without blocking the thread.
+ *
+ * If no event is found, `null` is returned.
+ */
+fun tryRead(): Event? {
+    return when (val internalEvent = io.github.kotlinmania.crossterm.event.tryRead(EventFilter)) {
+        null -> null
+        is InternalEvent.Event -> internalEvent.event
+        else -> error("tryRead(EventFilter) returned non-Event internal event: $internalEvent")
+    }
+}
+
+/**
+ * A command that enables mouse event capturing.
+ *
+ * Mouse events can be captured with [read]/[poll].
+ */
+data object EnableMouseCapture : Command {
+    override fun writeAnsi(writer: Appendable) {
+        writer.append(
+            csi("?1000h") +
+                csi("?1002h") +
+                csi("?1003h") +
+                csi("?1015h") +
+                csi("?1006h")
+        )
+    }
+}
+
+/**
+ * A command that disables mouse event capturing.
+ *
+ * Mouse events can be captured with [read]/[poll].
+ */
+data object DisableMouseCapture : Command {
+    override fun writeAnsi(writer: Appendable) {
+        writer.append(
+            csi("?1006l") +
+                csi("?1015l") +
+                csi("?1003l") +
+                csi("?1002l") +
+                csi("?1000l")
+        )
+    }
+}
+
+/**
+ * A command that enables focus event emission.
+ *
+ * Focus events can be captured with [read]/[poll].
+ */
+data object EnableFocusChange : Command {
+    override fun writeAnsi(writer: Appendable) {
+        writer.append(csi("?1004h"))
+    }
+}
+
+/**
+ * A command that disables focus event emission.
+ */
+data object DisableFocusChange : Command {
+    override fun writeAnsi(writer: Appendable) {
+        writer.append(csi("?1004l"))
+    }
+}
+
+/**
+ * A command that enables bracketed paste mode.
+ */
+data object EnableBracketedPaste : Command {
+    override fun writeAnsi(writer: Appendable) {
+        writer.append(csi("?2004h"))
+    }
+}
+
+/**
+ * A command that disables bracketed paste mode.
+ */
+data object DisableBracketedPaste : Command {
+    override fun writeAnsi(writer: Appendable) {
+        writer.append(csi("?2004l"))
+    }
+}
+
+/**
+ * A command that enables extra kinds of keyboard events (kitty keyboard protocol).
+ */
+data class PushKeyboardEnhancementFlags(val flags: KeyboardEnhancementFlags) : Command {
+    override fun writeAnsi(writer: Appendable) {
+        writer.append(csi(">"))
+        writer.append(flags.bits().toString())
+        writer.append("u")
+    }
+}
+
+/**
+ * A command that disables extra kinds of keyboard events.
+ */
+data object PopKeyboardEnhancementFlags : Command {
+    override fun writeAnsi(writer: Appendable) {
+        writer.append(csi("<1u"))
+    }
+}
+
 /**
  * Represents a terminal event.
  *

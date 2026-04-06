@@ -116,7 +116,7 @@ class EventStream private constructor() {
 
                         // Extract the public event from the internal event wrapper
                         when (internalEvent) {
-                            is InternalEvent.EventWrapper -> {
+                            is InternalEvent.Event -> {
                                 send(Result.success(internalEvent.event))
                             }
                             // Other internal events are not exposed publicly

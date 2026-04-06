@@ -6,6 +6,29 @@ import kotlinx.atomicfu.locks.withLock
 import kotlin.time.Duration
 
 /**
+ * An internal event.
+ *
+ * Encapsulates publicly available [Event] with additional internal events that shouldn't be publicly
+ * available to crate users.
+ *
+ * Ported from Rust crossterm `src/event/internal.rs` `InternalEvent`.
+ */
+sealed class InternalEvent {
+    /** A public event. */
+    data class Event(val event: io.github.kotlinmania.crossterm.event.Event) : InternalEvent()
+
+    /** A cursor position (column, row). */
+    data class CursorPosition(val column: UShort, val row: UShort) : InternalEvent()
+
+    /** The progressive keyboard enhancement flags enabled by the terminal. */
+    data class KeyboardEnhancementFlags(val flags: io.github.kotlinmania.crossterm.event.KeyboardEnhancementFlags) :
+        InternalEvent()
+
+    /** Attributes and architectural class of the terminal. */
+    data object PrimaryDeviceAttributes : InternalEvent()
+}
+
+/**
  * Global event reader singleton holder.
  *
  * This needs to be a singleton because there can only be one event reader

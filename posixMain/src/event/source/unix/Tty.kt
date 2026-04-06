@@ -251,7 +251,7 @@ class TtyInternalEventSource private constructor(
 
                     // Get new terminal size and return resize event
                     val newSize = size()
-                    return InternalEvent.EventWrapper(
+                    return InternalEvent.Event(
                         Event.Resize(newSize.first, newSize.second)
                     )
                 }
@@ -507,11 +507,11 @@ private fun ttyParseEvent(buffer: ByteArray, inputAvailable: Boolean): TtyParseR
                         val innerResult = ttyParseEvent(buffer.sliceArray(1 until buffer.size), inputAvailable)
                         if (innerResult is TtyParseResult.Success) {
                             val event = innerResult.event
-                            if (event is InternalEvent.EventWrapper && event.event is Event.Key) {
+                            if (event is InternalEvent.Event && event.event is Event.Key) {
                                 val altKeyEvent = event.event.keyEvent.copy(
                                     modifiers = event.event.keyEvent.modifiers + KeyModifiers.ALT
                                 )
-                                TtyParseResult.Success(InternalEvent.EventWrapper(Event.Key(altKeyEvent)))
+                                TtyParseResult.Success(InternalEvent.Event(Event.Key(altKeyEvent)))
                             } else {
                                 innerResult
                             }
@@ -532,7 +532,7 @@ private fun ttyParseEvent(buffer: ByteArray, inputAvailable: Boolean): TtyParseR
             } else {
                 // Ctrl+J
                 TtyParseResult.Success(
-                    InternalEvent.EventWrapper(
+                    InternalEvent.Event(
                         Event.Key(KeyEvent.new(KeyCode.Char('j'), KeyModifiers.CONTROL))
                     )
                 )
@@ -548,7 +548,7 @@ private fun ttyParseEvent(buffer: ByteArray, inputAvailable: Boolean): TtyParseR
             // Ctrl+A through Ctrl+Z
             val c = ('a'.code + (buffer[0] - 0x01)).toChar()
             TtyParseResult.Success(
-                InternalEvent.EventWrapper(
+                InternalEvent.Event(
                     Event.Key(KeyEvent.new(KeyCode.Char(c), KeyModifiers.CONTROL))
                 )
             )
@@ -557,7 +557,7 @@ private fun ttyParseEvent(buffer: ByteArray, inputAvailable: Boolean): TtyParseR
             // Ctrl+4 through Ctrl+7
             val c = ('4'.code + (buffer[0] - 0x1C)).toChar()
             TtyParseResult.Success(
-                InternalEvent.EventWrapper(
+                InternalEvent.Event(
                     Event.Key(KeyEvent.new(KeyCode.Char(c), KeyModifiers.CONTROL))
                 )
             )
@@ -565,7 +565,7 @@ private fun ttyParseEvent(buffer: ByteArray, inputAvailable: Boolean): TtyParseR
         0x00.toByte() -> {
             // Ctrl+Space
             TtyParseResult.Success(
-                InternalEvent.EventWrapper(
+                InternalEvent.Event(
                     Event.Key(KeyEvent.new(KeyCode.Char(' '), KeyModifiers.CONTROL))
                 )
             )
@@ -633,15 +633,15 @@ private fun ttyParseCsi(buffer: ByteArray): TtyParseResult {
         'Z'.code.toByte() -> {
             // Shift+Tab
             TtyParseResult.Success(
-                InternalEvent.EventWrapper(
+                InternalEvent.Event(
                     Event.Key(KeyEvent(KeyCode.BackTab, KeyModifiers.SHIFT, KeyEventKind.Press))
                 )
             )
         }
         'M'.code.toByte() -> ttyParseCsiNormalMouse(buffer)
         '<'.code.toByte() -> ttyParseCsiSgrMouse(buffer)
-        'I'.code.toByte() -> TtyParseResult.Success(InternalEvent.EventWrapper(Event.FocusGained))
-        'O'.code.toByte() -> TtyParseResult.Success(InternalEvent.EventWrapper(Event.FocusLost))
+        'I'.code.toByte() -> TtyParseResult.Success(InternalEvent.Event(Event.FocusGained))
+        'O'.code.toByte() -> TtyParseResult.Success(InternalEvent.Event(Event.FocusLost))
         ';'.code.toByte() -> ttyParseCsiModifierKeyCode(buffer)
         'P'.code.toByte() -> TtyParseResult.Success(keyEvent(KeyCode.F(1u)))
         'Q'.code.toByte() -> TtyParseResult.Success(keyEvent(KeyCode.F(2u)))
@@ -689,7 +689,7 @@ private fun ttyParseCsi(buffer: ByteArray): TtyParseResult {
  * Creates a simple key event wrapper.
  */
 private fun keyEvent(code: KeyCode): InternalEvent =
-    InternalEvent.EventWrapper(Event.Key(KeyEvent.new(code)))
+    InternalEvent.Event(Event.Key(KeyEvent.new(code)))
 
 /**
  * Parses CSI cursor position response.
@@ -730,7 +730,7 @@ private fun ttyParseCsiKeyboardEnhancementFlags(buffer: ByteArray): TtyParseResu
         flags = flags + KeyboardEnhancementFlags.REPORT_ALL_KEYS_AS_ESCAPE_CODES
     }
 
-    return TtyParseResult.Success(InternalEvent.KeyboardEnhancementFlagsEvent(flags))
+    return TtyParseResult.Success(InternalEvent.KeyboardEnhancementFlags(flags))
 }
 
 /**
@@ -800,7 +800,7 @@ private fun ttyParseCsiModifierKeyCode(buffer: ByteArray): TtyParseResult {
         else -> return TtyParseResult.Error
     }
 
-    return TtyParseResult.Success(InternalEvent.EventWrapper(Event.Key(KeyEvent(keycode, modifiers, kind))))
+    return TtyParseResult.Success(InternalEvent.Event(Event.Key(KeyEvent(keycode, modifiers, kind))))
 }
 
 /**
@@ -836,7 +836,7 @@ private fun ttyParseCsiSpecialKeyCode(buffer: ByteArray): TtyParseResult {
         else -> return TtyParseResult.Error
     }
 
-    return TtyParseResult.Success(InternalEvent.EventWrapper(Event.Key(KeyEvent(keycode, modifiers, kind))))
+    return TtyParseResult.Success(InternalEvent.Event(Event.Key(KeyEvent(keycode, modifiers, kind))))
 }
 
 /**
@@ -861,7 +861,7 @@ private fun ttyParseCsiUEncodedKeyCode(buffer: ByteArray): TtyParseResult {
 
     val keycode = ttyTranslateCodepoint(codepoint)
 
-    return TtyParseResult.Success(InternalEvent.EventWrapper(Event.Key(KeyEvent(keycode, modifiers, kind))))
+    return TtyParseResult.Success(InternalEvent.Event(Event.Key(KeyEvent(keycode, modifiers, kind))))
 }
 
 /**
@@ -899,7 +899,7 @@ private fun ttyParseCsiNormalMouse(buffer: ByteArray): TtyParseResult {
     val (kind, modifiers) = ttyParseCb(cb)
 
     return TtyParseResult.Success(
-        InternalEvent.EventWrapper(
+        InternalEvent.Event(
             Event.Mouse(MouseEvent(kind, cx.toUShort(), cy.toUShort(), modifiers))
         )
     )
@@ -935,7 +935,7 @@ private fun ttyParseCsiSgrMouse(buffer: ByteArray): TtyParseResult {
     }
 
     return TtyParseResult.Success(
-        InternalEvent.EventWrapper(
+        InternalEvent.Event(
             Event.Mouse(MouseEvent(finalKind, cx.toUShort(), cy.toUShort(), modifiers))
         )
     )
@@ -958,7 +958,7 @@ private fun ttyParseCsiRxvtMouse(buffer: ByteArray): TtyParseResult {
     val (kind, modifiers) = ttyParseCb(cb)
 
     return TtyParseResult.Success(
-        InternalEvent.EventWrapper(
+        InternalEvent.Event(
             Event.Mouse(MouseEvent(kind, cx.toUShort(), cy.toUShort(), modifiers))
         )
     )
@@ -1013,7 +1013,7 @@ private fun ttyParseCsiBracketedPaste(buffer: ByteArray): TtyParseResult {
     }
 
     val content = buffer.decodeToString(6, endIdx)
-    return TtyParseResult.Success(InternalEvent.EventWrapper(Event.Paste(content)))
+    return TtyParseResult.Success(InternalEvent.Event(Event.Paste(content)))
 }
 
 /**
@@ -1040,7 +1040,7 @@ private fun ttyParseUtf8Char(buffer: ByteArray): TtyParseResult {
         val char = buffer.decodeToString(0, expectedLen).firstOrNull() ?: return TtyParseResult.Error
         val modifiers = if (char.isUpperCase()) KeyModifiers.SHIFT else KeyModifiers.NONE
         TtyParseResult.Success(
-            InternalEvent.EventWrapper(
+            InternalEvent.Event(
                 Event.Key(KeyEvent.new(KeyCode.Char(char), modifiers))
             )
         )

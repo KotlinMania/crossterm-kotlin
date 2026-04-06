@@ -13,7 +13,6 @@ import kotlinx.cinterop.memScoped
 import kotlinx.cinterop.usePinned
 import platform.posix.close
 import platform.posix.pipe
-import platform.posix.read
 import platform.posix.write
 
 /**
@@ -123,34 +122,10 @@ class MioWaker private constructor(
     /**
      * Resets the state so the same waker can be reused.
      *
-     * This drains any pending wake signals from the pipe by reading all
-     * available bytes. This is not strictly necessary for pipe-based wakers
-     * since they automatically reset when read, but is provided for API
-     * compatibility with the Rust mio::Waker.
-     *
-     * Note: The original Rust implementation marks this as dead_code and
-     * returns Ok(()) without doing anything, since mio wakers don't require
-     * explicit reset. We provide a drain implementation for robustness.
+     * Note: the original Rust implementation returns `Ok(())` without doing anything.
      */
     fun reset() {
-        lock.withLock {
-            if (closed) {
-                return
-            }
-            // Drain any pending wake signals
-            val buffer = ByteArray(16)
-            buffer.usePinned { pinned ->
-                // Non-blocking read - drain all available bytes
-                // If there's nothing to read, this will fail with EAGAIN/EWOULDBLOCK
-                // which we silently ignore
-                while (true) {
-                    val result = read(readFd, pinned.addressOf(0), 16u.convert())
-                    if (result <= 0) {
-                        break
-                    }
-                }
-            }
-        }
+        // no-op
     }
 
     /**

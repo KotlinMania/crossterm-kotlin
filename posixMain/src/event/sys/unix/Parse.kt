@@ -56,7 +56,7 @@ fun parseEvent(buffer: ByteArray, inputAvailable: Boolean): ParseResult {
                     // Possible Esc sequence
                     ParseResult.Incomplete
                 } else {
-                    ParseResult.Success(InternalEvent.EventWrapper(Event.Key(KeyCode.Esc.toKeyEvent())))
+                    ParseResult.Success(InternalEvent.Event(Event.Key(KeyCode.Esc.toKeyEvent())))
                 }
             } else {
                 when (buffer[1]) {
@@ -65,34 +65,34 @@ fun parseEvent(buffer: ByteArray, inputAvailable: Boolean): ParseResult {
                             ParseResult.Incomplete
                         } else {
                             when (buffer[2]) {
-                                'D'.code.toByte() -> ParseResult.Success(InternalEvent.EventWrapper(Event.Key(KeyCode.Left.toKeyEvent())))
-                                'C'.code.toByte() -> ParseResult.Success(InternalEvent.EventWrapper(Event.Key(KeyCode.Right.toKeyEvent())))
-                                'A'.code.toByte() -> ParseResult.Success(InternalEvent.EventWrapper(Event.Key(KeyCode.Up.toKeyEvent())))
-                                'B'.code.toByte() -> ParseResult.Success(InternalEvent.EventWrapper(Event.Key(KeyCode.Down.toKeyEvent())))
-                                'H'.code.toByte() -> ParseResult.Success(InternalEvent.EventWrapper(Event.Key(KeyCode.Home.toKeyEvent())))
-                                'F'.code.toByte() -> ParseResult.Success(InternalEvent.EventWrapper(Event.Key(KeyCode.End.toKeyEvent())))
+                                'D'.code.toByte() -> ParseResult.Success(InternalEvent.Event(Event.Key(KeyCode.Left.toKeyEvent())))
+                                'C'.code.toByte() -> ParseResult.Success(InternalEvent.Event(Event.Key(KeyCode.Right.toKeyEvent())))
+                                'A'.code.toByte() -> ParseResult.Success(InternalEvent.Event(Event.Key(KeyCode.Up.toKeyEvent())))
+                                'B'.code.toByte() -> ParseResult.Success(InternalEvent.Event(Event.Key(KeyCode.Down.toKeyEvent())))
+                                'H'.code.toByte() -> ParseResult.Success(InternalEvent.Event(Event.Key(KeyCode.Home.toKeyEvent())))
+                                'F'.code.toByte() -> ParseResult.Success(InternalEvent.Event(Event.Key(KeyCode.End.toKeyEvent())))
                                 // F1-F4
                                 in 'P'.code.toByte()..'S'.code.toByte() -> {
                                     val fNum = (1 + buffer[2] - 'P'.code.toByte()).toUByte()
-                                    ParseResult.Success(InternalEvent.EventWrapper(Event.Key(KeyCode.F(fNum).toKeyEvent())))
+                                    ParseResult.Success(InternalEvent.Event(Event.Key(KeyCode.F(fNum).toKeyEvent())))
                                 }
                                 else -> ParseResult.Error
                             }
                         }
                     }
                     '['.code.toByte() -> parseCsi(buffer)
-                    0x1B.toByte() -> ParseResult.Success(InternalEvent.EventWrapper(Event.Key(KeyCode.Esc.toKeyEvent())))
+                    0x1B.toByte() -> ParseResult.Success(InternalEvent.Event(Event.Key(KeyCode.Esc.toKeyEvent())))
                     else -> {
                         // Alt + key combination
                         val innerResult = parseEvent(buffer.sliceArray(1 until buffer.size), inputAvailable)
                         if (innerResult is ParseResult.Success) {
                             val event = innerResult.event
-                            if (event is InternalEvent.EventWrapper && event.event is Event.Key) {
+                            if (event is InternalEvent.Event && event.event is Event.Key) {
                                 val keyEvent = event.event.keyEvent
                                 val altKeyEvent = keyEvent.copy(
                                     modifiers = keyEvent.modifiers + KeyModifiers.ALT
                                 )
-                                ParseResult.Success(InternalEvent.EventWrapper(Event.Key(altKeyEvent)))
+                                ParseResult.Success(InternalEvent.Event(Event.Key(altKeyEvent)))
                             } else {
                                 innerResult
                             }
@@ -103,30 +103,30 @@ fun parseEvent(buffer: ByteArray, inputAvailable: Boolean): ParseResult {
                 }
             }
         }
-        '\r'.code.toByte() -> ParseResult.Success(InternalEvent.EventWrapper(Event.Key(KeyCode.Enter.toKeyEvent())))
+        '\r'.code.toByte() -> ParseResult.Success(InternalEvent.Event(Event.Key(KeyCode.Enter.toKeyEvent())))
         // Issue #371: \n = 0xA, which is also the keycode for Ctrl+J. The only reason we get
         // newlines as input is because the terminal converts \r into \n for us. When we
         // enter raw mode, we disable that, so \n no longer has any meaning - it's better to
         // use Ctrl+J. Waiting to handle it here means it gets picked up later
         '\n'.code.toByte() -> {
             if (!isRawModeEnabled()) {
-                ParseResult.Success(InternalEvent.EventWrapper(Event.Key(KeyCode.Enter.toKeyEvent())))
+                ParseResult.Success(InternalEvent.Event(Event.Key(KeyCode.Enter.toKeyEvent())))
             } else {
                 // In raw mode, \n is Ctrl+J
                 ParseResult.Success(
-                    InternalEvent.EventWrapper(
+                    InternalEvent.Event(
                         Event.Key(KeyEvent.new(KeyCode.Char('j'), KeyModifiers.CONTROL))
                     )
                 )
             }
         }
-        '\t'.code.toByte() -> ParseResult.Success(InternalEvent.EventWrapper(Event.Key(KeyCode.Tab.toKeyEvent())))
-        0x7F.toByte() -> ParseResult.Success(InternalEvent.EventWrapper(Event.Key(KeyCode.Backspace.toKeyEvent())))
+        '\t'.code.toByte() -> ParseResult.Success(InternalEvent.Event(Event.Key(KeyCode.Tab.toKeyEvent())))
+        0x7F.toByte() -> ParseResult.Success(InternalEvent.Event(Event.Key(KeyCode.Backspace.toKeyEvent())))
         in 0x01..0x1A -> {
             // Ctrl+A through Ctrl+Z
             val c = ('a'.code + (buffer[0] - 0x01)).toChar()
             ParseResult.Success(
-                InternalEvent.EventWrapper(
+                InternalEvent.Event(
                     Event.Key(KeyEvent.new(KeyCode.Char(c), KeyModifiers.CONTROL))
                 )
             )
@@ -135,7 +135,7 @@ fun parseEvent(buffer: ByteArray, inputAvailable: Boolean): ParseResult {
             // Ctrl+4 through Ctrl+7
             val c = ('4'.code + (buffer[0] - 0x1C)).toChar()
             ParseResult.Success(
-                InternalEvent.EventWrapper(
+                InternalEvent.Event(
                     Event.Key(KeyEvent.new(KeyCode.Char(c), KeyModifiers.CONTROL))
                 )
             )
@@ -143,7 +143,7 @@ fun parseEvent(buffer: ByteArray, inputAvailable: Boolean): ParseResult {
         0x00.toByte() -> {
             // Ctrl+Space (NUL)
             ParseResult.Success(
-                InternalEvent.EventWrapper(
+                InternalEvent.Event(
                     Event.Key(KeyEvent.new(KeyCode.Char(' '), KeyModifiers.CONTROL))
                 )
             )
@@ -154,7 +154,7 @@ fun parseEvent(buffer: ByteArray, inputAvailable: Boolean): ParseResult {
                 onSuccess = { maybeChar ->
                     if (maybeChar != null) {
                         val keyEvent = charCodeToEvent(KeyCode.Char(maybeChar))
-                        ParseResult.Success(InternalEvent.EventWrapper(Event.Key(keyEvent)))
+                        ParseResult.Success(InternalEvent.Event(Event.Key(keyEvent)))
                     } else {
                         ParseResult.Incomplete
                     }
@@ -206,38 +206,38 @@ fun parseCsi(buffer: ByteArray): ParseResult {
                     // having another '[' after ESC[ not a likely scenario
                     in 'A'.code.toByte()..'E'.code.toByte() -> {
                         val fNum = (1 + buffer[3] - 'A'.code.toByte()).toUByte()
-                        ParseResult.Success(InternalEvent.EventWrapper(Event.Key(KeyCode.F(fNum).toKeyEvent())))
+                        ParseResult.Success(InternalEvent.Event(Event.Key(KeyCode.F(fNum).toKeyEvent())))
                     }
                     else -> ParseResult.Error
                 }
             }
         }
-        'D'.code.toByte() -> ParseResult.Success(InternalEvent.EventWrapper(Event.Key(KeyCode.Left.toKeyEvent())))
-        'C'.code.toByte() -> ParseResult.Success(InternalEvent.EventWrapper(Event.Key(KeyCode.Right.toKeyEvent())))
-        'A'.code.toByte() -> ParseResult.Success(InternalEvent.EventWrapper(Event.Key(KeyCode.Up.toKeyEvent())))
-        'B'.code.toByte() -> ParseResult.Success(InternalEvent.EventWrapper(Event.Key(KeyCode.Down.toKeyEvent())))
-        'H'.code.toByte() -> ParseResult.Success(InternalEvent.EventWrapper(Event.Key(KeyCode.Home.toKeyEvent())))
-        'F'.code.toByte() -> ParseResult.Success(InternalEvent.EventWrapper(Event.Key(KeyCode.End.toKeyEvent())))
+        'D'.code.toByte() -> ParseResult.Success(InternalEvent.Event(Event.Key(KeyCode.Left.toKeyEvent())))
+        'C'.code.toByte() -> ParseResult.Success(InternalEvent.Event(Event.Key(KeyCode.Right.toKeyEvent())))
+        'A'.code.toByte() -> ParseResult.Success(InternalEvent.Event(Event.Key(KeyCode.Up.toKeyEvent())))
+        'B'.code.toByte() -> ParseResult.Success(InternalEvent.Event(Event.Key(KeyCode.Down.toKeyEvent())))
+        'H'.code.toByte() -> ParseResult.Success(InternalEvent.Event(Event.Key(KeyCode.Home.toKeyEvent())))
+        'F'.code.toByte() -> ParseResult.Success(InternalEvent.Event(Event.Key(KeyCode.End.toKeyEvent())))
         'Z'.code.toByte() -> {
             // Shift+Tab (BackTab)
             ParseResult.Success(
-                InternalEvent.EventWrapper(
+                InternalEvent.Event(
                     Event.Key(KeyEvent(KeyCode.BackTab, KeyModifiers.SHIFT, KeyEventKind.Press))
                 )
             )
         }
         'M'.code.toByte() -> parseCsiNormalMouse(buffer)
         '<'.code.toByte() -> parseCsiSgrMouse(buffer)
-        'I'.code.toByte() -> ParseResult.Success(InternalEvent.EventWrapper(Event.FocusGained))
-        'O'.code.toByte() -> ParseResult.Success(InternalEvent.EventWrapper(Event.FocusLost))
+        'I'.code.toByte() -> ParseResult.Success(InternalEvent.Event(Event.FocusGained))
+        'O'.code.toByte() -> ParseResult.Success(InternalEvent.Event(Event.FocusLost))
         ';'.code.toByte() -> parseCsiModifierKeyCode(buffer)
         // P, Q, and S for compatibility with Kitty keyboard protocol,
         // as the 1 in 'CSI 1 P' etc. must be omitted if there are no
         // modifiers pressed:
         // https://sw.kovidgoyal.net/kitty/keyboard-protocol/#legacy-functional-keys
-        'P'.code.toByte() -> ParseResult.Success(InternalEvent.EventWrapper(Event.Key(KeyCode.F(1u).toKeyEvent())))
-        'Q'.code.toByte() -> ParseResult.Success(InternalEvent.EventWrapper(Event.Key(KeyCode.F(2u).toKeyEvent())))
-        'S'.code.toByte() -> ParseResult.Success(InternalEvent.EventWrapper(Event.Key(KeyCode.F(4u).toKeyEvent())))
+        'P'.code.toByte() -> ParseResult.Success(InternalEvent.Event(Event.Key(KeyCode.F(1u).toKeyEvent())))
+        'Q'.code.toByte() -> ParseResult.Success(InternalEvent.Event(Event.Key(KeyCode.F(2u).toKeyEvent())))
+        'S'.code.toByte() -> ParseResult.Success(InternalEvent.Event(Event.Key(KeyCode.F(4u).toKeyEvent())))
         '?'.code.toByte() -> {
             when (buffer.last()) {
                 'u'.code.toByte() -> parseCsiKeyboardEnhancementFlags(buffer)
@@ -371,7 +371,7 @@ private fun parseCsiKeyboardEnhancementFlags(buffer: ByteArray): ParseResult {
     //     flags = flags + KeyboardEnhancementFlags.REPORT_ASSOCIATED_TEXT
     // }
 
-    return ParseResult.Success(InternalEvent.KeyboardEnhancementFlagsEvent(flags))
+    return ParseResult.Success(InternalEvent.KeyboardEnhancementFlags(flags))
 }
 
 /**
@@ -469,7 +469,7 @@ fun parseCsiModifierKeyCode(buffer: ByteArray): ParseResult {
     }
 
     val inputEvent = Event.Key(KeyEvent(keycode, modifiers, kind))
-    return ParseResult.Success(InternalEvent.EventWrapper(inputEvent))
+    return ParseResult.Success(InternalEvent.Event(inputEvent))
 }
 
 /**
@@ -682,7 +682,7 @@ fun parseCsiUEncodedKeyCode(buffer: ByteArray): ParseResult {
 
     val state = KeyEventState((stateFromKeycode.bits.toInt() or stateFromModifiers.bits.toInt()).toUByte())
     val inputEvent = Event.Key(KeyEvent(finalKeycode, finalModifiers, kind, state))
-    return ParseResult.Success(InternalEvent.EventWrapper(inputEvent))
+    return ParseResult.Success(InternalEvent.Event(inputEvent))
 }
 
 /**
@@ -732,7 +732,7 @@ fun parseCsiSpecialKeyCode(buffer: ByteArray): ParseResult {
     }
 
     val inputEvent = Event.Key(KeyEvent(keycode, modifiers, kind, state))
-    return ParseResult.Success(InternalEvent.EventWrapper(inputEvent))
+    return ParseResult.Success(InternalEvent.Event(inputEvent))
 }
 
 /**
@@ -762,7 +762,7 @@ fun parseCsiRxvtMouse(buffer: ByteArray): ParseResult {
     val cy = ((parts[2].toUShortOrNull() ?: return ParseResult.Error) - 1u).toUShort()
 
     return ParseResult.Success(
-        InternalEvent.EventWrapper(
+        InternalEvent.Event(
             Event.Mouse(MouseEvent(kind, cx, cy, modifiers))
         )
     )
@@ -793,7 +793,7 @@ fun parseCsiNormalMouse(buffer: ByteArray): ParseResult {
     val cy = (buffer[5].toInt() and 0xFF).coerceAtLeast(32) - 32 - 1
 
     return ParseResult.Success(
-        InternalEvent.EventWrapper(
+        InternalEvent.Event(
             Event.Mouse(MouseEvent(kind, cx.toUShort(), cy.toUShort(), modifiers))
         )
     )
@@ -844,7 +844,7 @@ fun parseCsiSgrMouse(buffer: ByteArray): ParseResult {
     }
 
     return ParseResult.Success(
-        InternalEvent.EventWrapper(
+        InternalEvent.Event(
             Event.Mouse(MouseEvent(finalKind, cx, cy, modifiers))
         )
     )
@@ -923,7 +923,7 @@ fun parseCsiBracketedPaste(buffer: ByteArray): ParseResult {
         return ParseResult.Error
     }
 
-    return ParseResult.Success(InternalEvent.EventWrapper(Event.Paste(paste)))
+    return ParseResult.Success(InternalEvent.Event(Event.Paste(paste)))
 }
 
 /**

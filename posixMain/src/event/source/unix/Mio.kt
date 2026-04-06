@@ -469,7 +469,7 @@ private fun mioParseEvent(buffer: ByteArray, inputAvailable: Boolean): MioParseR
             // Ctrl+A through Ctrl+Z
             val char = ('a'.code + buffer[0].toInt() - 0x01).toChar()
             MioParseResult.Event(
-                InternalEvent.EventWrapper(
+                InternalEvent.Event(
                     Event.Key(
                         io.github.kotlinmania.crossterm.event.KeyEvent(
                             io.github.kotlinmania.crossterm.event.KeyCode.Char(char),
@@ -482,7 +482,7 @@ private fun mioParseEvent(buffer: ByteArray, inputAvailable: Boolean): MioParseR
         0x00.toByte() -> {
             // Ctrl+Space
             MioParseResult.Event(
-                InternalEvent.EventWrapper(
+                InternalEvent.Event(
                     Event.Key(
                         io.github.kotlinmania.crossterm.event.KeyEvent(
                             io.github.kotlinmania.crossterm.event.KeyCode.Char(' '),
@@ -520,10 +520,10 @@ private fun mioParseEscapeSequence(buffer: ByteArray, inputAvailable: Boolean): 
                 val charResult = mioParseUtf8Char(buffer.sliceArray(1 until buffer.size))
                 if (charResult is MioParseResult.Event) {
                     val innerEvent = charResult.event
-                    if (innerEvent is InternalEvent.EventWrapper && innerEvent.event is Event.Key) {
+                    if (innerEvent is InternalEvent.Event && innerEvent.event is Event.Key) {
                         val keyEvent = innerEvent.event.keyEvent
                         return MioParseResult.Event(
-                            InternalEvent.EventWrapper(
+                            InternalEvent.Event(
                                 Event.Key(
                                     keyEvent.copy(
                                         modifiers = keyEvent.modifiers + io.github.kotlinmania.crossterm.event.KeyModifiers.ALT
@@ -663,7 +663,7 @@ private fun mioParseUtf8Char(buffer: ByteArray): MioParseResult {
                 io.github.kotlinmania.crossterm.event.KeyModifiers.NONE
             }
             MioParseResult.Event(
-                InternalEvent.EventWrapper(
+                InternalEvent.Event(
                     Event.Key(
                         io.github.kotlinmania.crossterm.event.KeyEvent(
                             io.github.kotlinmania.crossterm.event.KeyCode.Char(char),
@@ -684,7 +684,7 @@ private fun mioParseUtf8Char(buffer: ByteArray): MioParseResult {
  * Helper function to create a simple key event.
  */
 private fun mioKeyEvent(code: io.github.kotlinmania.crossterm.event.KeyCode): InternalEvent =
-    InternalEvent.EventWrapper(
+    InternalEvent.Event(
         Event.Key(
             io.github.kotlinmania.crossterm.event.KeyEvent(code)
         )

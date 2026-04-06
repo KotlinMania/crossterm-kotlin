@@ -12,7 +12,7 @@ import io.github.kotlinmania.crossterm.terminal.EndSynchronizedUpdate
  * In order to understand how to use and execute commands,
  * it is recommended that you take a look at the Command API chapter.
  *
- * Ported from Rust crossterm/src/command.rs Command trait.
+ * Ported from Rust crossterm `src/command.rs` `Command` trait.
  */
 interface Command {
     /**
@@ -22,13 +22,13 @@ interface Command {
      *
      * This method does not need to be accessed manually, as it is used by the crossterm's Command API.
      */
-    fun writeAnsi(f: Appendable)
+    fun writeAnsi(writer: Appendable)
 }
 
 /**
  * An interface for types that can queue commands for further execution.
  *
- * Ported from Rust crossterm/src/command.rs QueueableCommand trait.
+ * Ported from Rust crossterm `src/command.rs` `QueueableCommand` trait.
  */
 interface QueueableCommand {
     /**
@@ -47,7 +47,7 @@ interface QueueableCommand {
 /**
  * An interface for types that can directly execute commands.
  *
- * Ported from Rust crossterm/src/command.rs ExecutableCommand trait.
+ * Ported from Rust crossterm `src/command.rs` `ExecutableCommand` trait.
  */
 interface ExecutableCommand {
     /**
@@ -61,9 +61,9 @@ interface ExecutableCommand {
 /**
  * An interface for types that support synchronized updates.
  *
- * Ported from Rust crossterm/src/command.rs SynchronizedUpdate trait.
+ * Ported from Rust crossterm `src/command.rs` `SynchronizedUpdate` trait.
  */
-interface SynchronizedUpdate {
+interface SynchronizedUpdate : QueueableCommand, ExecutableCommand {
     /**
      * Performs a set of actions within a synchronous update.
      *
@@ -76,13 +76,18 @@ interface SynchronizedUpdate {
      *
      * This mode attempts to mitigate that.
      */
-    fun <T> syncUpdate(operations: () -> T): T
+    fun <T> syncUpdate(operations: (SynchronizedUpdate) -> T): T {
+        queue(BeginSynchronizedUpdate)
+        val result = operations(this)
+        execute(EndSynchronizedUpdate)
+        return result
+    }
 }
 
 /**
  * Writes the ANSI representation of a command to the given writer.
  *
- * Ported from Rust crossterm/src/command.rs write_command_ansi.
+ * Ported from Rust crossterm `src/command.rs` `write_command_ansi`.
  */
 fun writeCommandAnsi(writer: Appendable, command: Command) {
     command.writeAnsi(writer)
@@ -91,7 +96,7 @@ fun writeCommandAnsi(writer: Appendable, command: Command) {
 /**
  * Executes the ANSI representation of a command, using the given [Appendable].
  *
- * Ported from Rust crossterm/src/command.rs execute_fmt.
+ * Ported from Rust crossterm `src/command.rs` `execute_fmt`.
  */
 fun executeFmt(f: Appendable, command: Command) {
     command.writeAnsi(f)
@@ -101,47 +106,3 @@ fun executeFmt(f: Appendable, command: Command) {
  * Returns the ANSI escape sequence for this command as a string.
  */
 fun Command.ansiString(): String = buildString { writeAnsi(this) }
-
-/**
- * A writer that buffers commands and writes their ANSI representations.
- *
- * This provides the Kotlin equivalent of the Rust QueueableCommand + ExecutableCommand
- * implementations on io::Write. Commands are buffered as strings and can be flushed
- * to a target writer.
- */
-class CommandWriter(
-    private val writer: Appendable
-) : QueueableCommand, ExecutableCommand, SynchronizedUpdate {
-
-    override fun queue(command: Command): CommandWriter {
-        writeCommandAnsi(writer, command)
-        return this
-    }
-
-    override fun flush() {
-        // For Appendable, flushing is a no-op unless backed by a buffered stream.
-        // Platform-specific implementations can override this.
-    }
-
-    override fun execute(command: Command): CommandWriter {
-        queue(command)
-        flush()
-        return this
-    }
-
-    override fun <T> syncUpdate(operations: () -> T): T {
-        queue(BeginSynchronizedUpdate)
-        val result = operations()
-        execute(EndSynchronizedUpdate)
-        return result
-    }
-}
-
-/**
- * Executes multiple commands in sequence, returning the combined ANSI string.
- */
-fun executeCommands(vararg commands: Command): String = buildString {
-    for (command in commands) {
-        command.writeAnsi(this)
-    }
-}

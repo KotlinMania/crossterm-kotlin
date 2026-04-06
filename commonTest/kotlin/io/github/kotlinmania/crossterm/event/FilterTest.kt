@@ -24,16 +24,16 @@ class FilterTest {
 
     @Test
     fun testCursorPositionFilterFiltersCursorPosition() {
-        assertFalse(CursorPositionFilter.eval(InternalEvent.EventWrapper(Event.Resize(10u, 10u))))
+        assertFalse(CursorPositionFilter.eval(InternalEvent.Event(Event.Resize(10u, 10u))))
         assertTrue(CursorPositionFilter.eval(InternalEvent.CursorPosition(0u, 0u)))
     }
 
     @Test
     fun testKeyboardEnhancementStatusFilterFiltersKeyboardEnhancementStatus() {
-        assertFalse(KeyboardEnhancementFlagsFilter.eval(InternalEvent.EventWrapper(Event.Resize(10u, 10u))))
+        assertFalse(KeyboardEnhancementFlagsFilter.eval(InternalEvent.Event(Event.Resize(10u, 10u))))
         assertTrue(
             KeyboardEnhancementFlagsFilter.eval(
-                InternalEvent.KeyboardEnhancementFlagsEvent(KeyboardEnhancementFlags.DISAMBIGUATE_ESCAPE_CODES)
+                InternalEvent.KeyboardEnhancementFlags(KeyboardEnhancementFlags.DISAMBIGUATE_ESCAPE_CODES)
             )
         )
         assertTrue(KeyboardEnhancementFlagsFilter.eval(InternalEvent.PrimaryDeviceAttributes))
@@ -41,20 +41,20 @@ class FilterTest {
 
     @Test
     fun testPrimaryDeviceAttributesFilterFiltersPrimaryDeviceAttributes() {
-        assertFalse(PrimaryDeviceAttributesFilter.eval(InternalEvent.EventWrapper(Event.Resize(10u, 10u))))
+        assertFalse(PrimaryDeviceAttributesFilter.eval(InternalEvent.Event(Event.Resize(10u, 10u))))
         assertTrue(PrimaryDeviceAttributesFilter.eval(InternalEvent.PrimaryDeviceAttributes))
     }
 
     @Test
     fun testEventFilterFiltersEvents() {
-        assertTrue(EventFilter.eval(InternalEvent.EventWrapper(Event.Resize(10u, 10u))))
+        assertTrue(EventFilter.eval(InternalEvent.Event(Event.Resize(10u, 10u))))
         assertFalse(EventFilter.eval(InternalEvent.CursorPosition(0u, 0u)))
     }
 
     @Test
     fun testEventFilterFiltersInternalEvents() {
         val filter = InternalEventFilter()
-        assertTrue(filter.eval(InternalEvent.EventWrapper(Event.Resize(10u, 10u))))
+        assertTrue(filter.eval(InternalEvent.Event(Event.Resize(10u, 10u))))
         assertTrue(filter.eval(InternalEvent.CursorPosition(0u, 0u)))
     }
 }
