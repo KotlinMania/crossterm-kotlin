@@ -818,23 +818,22 @@ Symbol Analysis:
   {prog} --compiler-fixup <kotlin_root> <error_file> [options]
       Parse compiler errors and suggest import fixes
 
-Swarm Task Management:
-  {prog} --init-tasks <src_dir> <src_lang> <tgt_dir> <tgt_lang> <task_file>
-      Generate task file from missing/incomplete ports
-
-  {prog} --tasks <task_file>
-      Show task status summary
-
-  {prog} --assign <task_file> <agent_id>
-      Assign highest-priority pending task to an agent
-
-  {prog} --complete <task_file> <source_qualified>
-      Mark a task as completed
-
-  {prog} --release <task_file> <source_qualified>
-      Release an assigned task back to pending
+Swarm Task Management (DISABLED):
+  Disabled flags: --init-tasks, --tasks, --assign, --complete, --release, --agent, --task-file, --override
 
   Languages: rust, kotlin, cpp, python""", file=sys.stderr)
+
+
+_DISABLED_SWARM_FLAGS: set[str] = {
+    "--init-tasks",
+    "--tasks",
+    "--assign",
+    "--complete",
+    "--release",
+    "--agent",
+    "--task-file",
+    "--override",
+}
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -845,6 +844,15 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     mode = args[0]
+
+    if mode in _DISABLED_SWARM_FLAGS:
+        print(f"Error: {mode} is disabled in this ast_distance build.", file=sys.stderr)
+        print(
+            "Disabled flags: --init-tasks, --tasks, --assign, --complete, --release, "
+            "--agent, --task-file, --override",
+            file=sys.stderr,
+        )
+        return 2
 
     try:
         if mode == "--scan" and len(args) >= 3:
@@ -882,22 +890,6 @@ def main(argv: list[str] | None = None) -> int:
             "--compiler-fixup",
         }:
             _proxy_to_cpp(args)
-
-        elif mode == "--init-tasks" and len(args) >= 6:
-            agents_md = args[6] if len(args) >= 7 else ""
-            cmd_init_tasks(args[1], args[2], args[3], args[4], args[5], agents_md)
-
-        elif mode == "--tasks" and len(args) >= 2:
-            cmd_tasks(args[1])
-
-        elif mode == "--assign" and len(args) >= 3:
-            cmd_assign(args[1], args[2])
-
-        elif mode == "--complete" and len(args) >= 3:
-            cmd_complete(args[1], args[2])
-
-        elif mode == "--release" and len(args) >= 3:
-            cmd_release(args[1], args[2])
 
         elif mode == "--dump" and len(args) >= 3:
             cmd_dump(args[1], args[2])
