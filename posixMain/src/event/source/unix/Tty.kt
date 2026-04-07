@@ -929,7 +929,10 @@ private fun ttyParseCsiSgrMouse(buffer: ByteArray): TtyParseResult {
 
     // For SGR, 'm' means button release
     val finalKind = if (lastByte == 'm'.code.toByte()) {
-        MouseEventKind.Up
+        when (kind) {
+            is MouseEventKind.Down -> MouseEventKind.Up(kind.button)
+            else -> kind
+        }
     } else {
         kind
     }
@@ -977,16 +980,26 @@ private fun ttyParseCb(cb: Int): Pair<MouseEventKind, KeyModifiers> {
         cb and 64 != 0 -> {
             // Scroll
             when (cb and 3) {
-                0 -> MouseEventKind.ScrollUp()
-                1 -> MouseEventKind.ScrollDown()
-                2 -> MouseEventKind.ScrollLeft()
-                3 -> MouseEventKind.ScrollRight()
-                else -> MouseEventKind.ScrollUp()
+                0 -> MouseEventKind.ScrollUp
+                1 -> MouseEventKind.ScrollDown
+                2 -> MouseEventKind.ScrollLeft
+                3 -> MouseEventKind.ScrollRight
+                else -> MouseEventKind.ScrollUp
             }
         }
-        cb and 32 != 0 -> MouseEventKind.Drag
-        cb and 3 == 3 -> MouseEventKind.Up
-        else -> MouseEventKind.Down
+        cb and 32 != 0 -> when (cb and 3) {
+            0 -> MouseEventKind.Drag(MouseButton.Left)
+            1 -> MouseEventKind.Drag(MouseButton.Middle)
+            2 -> MouseEventKind.Drag(MouseButton.Right)
+            else -> MouseEventKind.Drag(MouseButton.Left)
+        }
+        cb and 3 == 3 -> MouseEventKind.Up(MouseButton.Left)
+        else -> when (cb and 3) {
+            0 -> MouseEventKind.Down(MouseButton.Left)
+            1 -> MouseEventKind.Down(MouseButton.Middle)
+            2 -> MouseEventKind.Down(MouseButton.Right)
+            else -> MouseEventKind.Down(MouseButton.Left)
+        }
     }
 
     return Pair(kind, modifiers)

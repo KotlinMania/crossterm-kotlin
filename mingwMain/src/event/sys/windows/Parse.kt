@@ -366,17 +366,17 @@ internal fun parseMouseEventRecord(
         EventFlags.PressOrRelease, EventFlags.DoubleClick -> {
             when {
                 buttonState.leftButton() && !buttonsPressed.left ->
-                    MouseEventKind.Down
+                    MouseEventKind.Down(MouseButton.Left)
                 !buttonState.leftButton() && buttonsPressed.left ->
-                    MouseEventKind.Up
+                    MouseEventKind.Up(MouseButton.Left)
                 buttonState.rightButton() && !buttonsPressed.right ->
-                    MouseEventKind.Down
+                    MouseEventKind.Down(MouseButton.Right)
                 !buttonState.rightButton() && buttonsPressed.right ->
-                    MouseEventKind.Up
+                    MouseEventKind.Up(MouseButton.Right)
                 buttonState.middleButton() && !buttonsPressed.middle ->
-                    MouseEventKind.Down
+                    MouseEventKind.Down(MouseButton.Middle)
                 !buttonState.middleButton() && buttonsPressed.middle ->
-                    MouseEventKind.Up
+                    MouseEventKind.Up(MouseButton.Middle)
                 else -> null
             }
         }
@@ -384,7 +384,13 @@ internal fun parseMouseEventRecord(
             if (buttonState.releaseButton()) {
                 MouseEventKind.Moved
             } else {
-                MouseEventKind.Drag
+                MouseEventKind.Drag(
+                    when {
+                        buttonState.rightButton() -> MouseButton.Right
+                        buttonState.middleButton() -> MouseButton.Middle
+                        else -> MouseButton.Left
+                    }
+                )
             }
         }
         EventFlags.MouseWheeled -> {
@@ -392,15 +398,15 @@ internal fun parseMouseEventRecord(
             // from https://docs.microsoft.com/en-us/windows/console/mouse-event-record-str
             // if `button_state` is negative then the wheel was rotated backward, toward the user.
             when {
-                buttonState.scrollDown() -> MouseEventKind.ScrollDown()
-                buttonState.scrollUp() -> MouseEventKind.ScrollUp()
+                buttonState.scrollDown() -> MouseEventKind.ScrollDown
+                buttonState.scrollUp() -> MouseEventKind.ScrollUp
                 else -> null
             }
         }
         EventFlags.MouseHwheeled -> {
             when {
-                buttonState.scrollLeft() -> MouseEventKind.ScrollLeft()
-                buttonState.scrollRight() -> MouseEventKind.ScrollRight()
+                buttonState.scrollLeft() -> MouseEventKind.ScrollLeft
+                buttonState.scrollRight() -> MouseEventKind.ScrollRight
                 else -> null
             }
         }

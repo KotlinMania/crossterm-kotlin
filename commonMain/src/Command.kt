@@ -23,6 +23,25 @@ interface Command {
      * This method does not need to be accessed manually, as it is used by the crossterm's Command API.
      */
     fun writeAnsi(writer: Appendable)
+
+    /**
+     * Execute this command using WinAPI calls (Windows-only behavior).
+     *
+     * Ported from Rust crossterm `src/command.rs` `Command::execute_winapi` (behind `#[cfg(windows)]`).
+     *
+     * In this Kotlin port the default behavior is a no-op, because most commands are executed as ANSI
+     * strings. Platform-specific commands can override this where needed.
+     */
+    fun executeWinapi() {
+        // no-op
+    }
+
+    /**
+     * Returns whether this command's ANSI representation is supported on Windows.
+     *
+     * Ported from Rust crossterm `src/command.rs` `Command::is_ansi_code_supported` (behind `#[cfg(windows)]`).
+     */
+    fun isAnsiCodeSupported(): Boolean = AnsiSupport.supportsAnsi()
 }
 
 /**
@@ -30,13 +49,22 @@ interface Command {
  *
  * Ported from Rust crossterm `src/command.rs` `QueueableCommand` trait.
  */
-interface QueueableCommand {
+interface QueueableCommand : Appendable {
     /**
      * Queues the given command for further execution.
      *
      * Queued commands will be executed when [flush] is called.
      */
-    fun queue(command: Command): QueueableCommand
+    fun queue(command: Command): QueueableCommand {
+        if (!command.isAnsiCodeSupported()) {
+            flush()
+            command.executeWinapi()
+            return this
+        }
+
+        writeCommandAnsi(this, command)
+        return this
+    }
 
     /**
      * Flushes any queued commands.
@@ -49,13 +77,17 @@ interface QueueableCommand {
  *
  * Ported from Rust crossterm `src/command.rs` `ExecutableCommand` trait.
  */
-interface ExecutableCommand {
+interface ExecutableCommand : QueueableCommand {
     /**
      * Executes the given command directly.
      *
      * The given command's ANSI escape code will be written and flushed.
      */
-    fun execute(command: Command): ExecutableCommand
+    fun execute(command: Command): ExecutableCommand {
+        queue(command)
+        flush()
+        return this
+    }
 }
 
 /**
@@ -63,7 +95,7 @@ interface ExecutableCommand {
  *
  * Ported from Rust crossterm `src/command.rs` `SynchronizedUpdate` trait.
  */
-interface SynchronizedUpdate : QueueableCommand, ExecutableCommand {
+interface SynchronizedUpdate : ExecutableCommand {
     /**
      * Performs a set of actions within a synchronous update.
      *
@@ -99,6 +131,11 @@ fun writeCommandAnsi(writer: Appendable, command: Command) {
  * Ported from Rust crossterm `src/command.rs` `execute_fmt`.
  */
 fun executeFmt(f: Appendable, command: Command) {
+    if (!command.isAnsiCodeSupported()) {
+        command.executeWinapi()
+        return
+    }
+
     command.writeAnsi(f)
 }
 
@@ -106,3 +143,14 @@ fun executeFmt(f: Appendable, command: Command) {
  * Returns the ANSI escape sequence for this command as a string.
  */
 fun Command.ansiString(): String = buildString { writeAnsi(this) }
+
+/**
+ * Executes multiple commands in sequence and returns the combined ANSI string.
+ *
+ * This is the Kotlin analogue of Rust's `execute!` macro when targeting ANSI output.
+ */
+fun execute(vararg commands: Command): String = buildString {
+    for (command in commands) {
+        command.writeAnsi(this)
+    }
+}

@@ -836,7 +836,7 @@ fun parseCsiSgrMouse(buffer: ByteArray): ParseResult {
     // button release and an uppercase M if it's a button press.
     val finalKind = if (lastByte == 'm'.code.toByte()) {
         when (kind) {
-            MouseEventKind.Down -> MouseEventKind.Up
+            is MouseEventKind.Down -> MouseEventKind.Up(kind.button)
             else -> kind
         }
     } else {
@@ -870,19 +870,19 @@ private fun parseCb(cb: UByte): Pair<MouseEventKind, KeyModifiers> {
     val dragging = (cbInt and 0b0010_0000) == 0b0010_0000
 
     val kind = when (buttonNumber to dragging) {
-        0 to false -> MouseEventKind.Down
-        1 to false -> MouseEventKind.Down
-        2 to false -> MouseEventKind.Down
-        0 to true -> MouseEventKind.Drag
-        1 to true -> MouseEventKind.Drag
-        2 to true -> MouseEventKind.Drag
-        3 to false -> MouseEventKind.Up
+        0 to false -> MouseEventKind.Down(MouseButton.Left)
+        1 to false -> MouseEventKind.Down(MouseButton.Middle)
+        2 to false -> MouseEventKind.Down(MouseButton.Right)
+        0 to true -> MouseEventKind.Drag(MouseButton.Left)
+        1 to true -> MouseEventKind.Drag(MouseButton.Middle)
+        2 to true -> MouseEventKind.Drag(MouseButton.Right)
+        3 to false -> MouseEventKind.Up(MouseButton.Left)
         3 to true, 4 to true, 5 to true -> MouseEventKind.Moved
-        4 to false -> MouseEventKind.ScrollUp()
-        5 to false -> MouseEventKind.ScrollDown()
-        6 to false -> MouseEventKind.ScrollLeft()
-        7 to false -> MouseEventKind.ScrollRight()
-        else -> return Pair(MouseEventKind.Down, KeyModifiers.NONE) // Unsupported button
+        4 to false -> MouseEventKind.ScrollUp
+        5 to false -> MouseEventKind.ScrollDown
+        6 to false -> MouseEventKind.ScrollLeft
+        7 to false -> MouseEventKind.ScrollRight
+        else -> return Pair(MouseEventKind.Down(MouseButton.Left), KeyModifiers.NONE)
     }
 
     var modifiers = KeyModifiers.NONE

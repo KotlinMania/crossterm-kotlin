@@ -214,6 +214,36 @@ sealed class Event {
 
     /** Returns the key event if this is a Key event, otherwise null */
     fun asKeyEvent(): KeyEvent? = (this as? Key)?.keyEvent
+
+    /** Returns the key event if this is a key press event, otherwise null. */
+    fun asKeyPressEvent(): KeyEvent? = when (this) {
+        is Key -> if (isKeyPress()) keyEvent else null
+        else -> null
+    }
+
+    /** Returns the key event if this is a key release event, otherwise null. */
+    fun asKeyReleaseEvent(): KeyEvent? = when (this) {
+        is Key -> if (isKeyRelease()) keyEvent else null
+        else -> null
+    }
+
+    /** Returns the key event if this is a key repeat event, otherwise null. */
+    fun asKeyRepeatEvent(): KeyEvent? = when (this) {
+        is Key -> if (isKeyRepeat()) keyEvent else null
+        else -> null
+    }
+
+    /** Returns the mouse event if this is a mouse event, otherwise null. */
+    fun asMouseEvent(): MouseEvent? = (this as? Mouse)?.mouseEvent
+
+    /** Returns the pasted text if this is a paste event, otherwise null. */
+    fun asPasteEvent(): String? = (this as? Paste)?.content
+
+    /** Returns the terminal size if this is a resize event, otherwise null. */
+    fun asResizeEvent(): Pair<UShort, UShort>? = when (this) {
+        is Resize -> Pair(columns, rows)
+        else -> null
+    }
 }
 
 /**
@@ -232,6 +262,19 @@ data class KeyEvent(
     companion object {
         fun new(code: KeyCode, modifiers: KeyModifiers = KeyModifiers.NONE): KeyEvent =
             KeyEvent(code, modifiers, KeyEventKind.Press, KeyEventState.NONE)
+
+        fun newWithKind(
+            code: KeyCode,
+            modifiers: KeyModifiers = KeyModifiers.NONE,
+            kind: KeyEventKind
+        ): KeyEvent = KeyEvent(code, modifiers, kind, KeyEventState.NONE)
+
+        fun newWithKindAndState(
+            code: KeyCode,
+            modifiers: KeyModifiers = KeyModifiers.NONE,
+            kind: KeyEventKind,
+            state: KeyEventState
+        ): KeyEvent = KeyEvent(code, modifiers, kind, state)
     }
 
     /** Returns whether this is a press event */
@@ -242,6 +285,51 @@ data class KeyEvent(
 
     /** Returns whether this is a repeat event */
     fun isRepeat(): Boolean = kind == KeyEventKind.Repeat
+
+    private fun normalizeCase(): KeyEvent {
+        val keyCode = code
+        if (keyCode !is KeyCode.Char) {
+            return this
+        }
+
+        val char = keyCode.char
+        return when {
+            char.isAsciiUppercase() -> {
+                if (modifiers.contains(KeyModifiers.SHIFT)) {
+                    this
+                } else {
+                    copy(modifiers = modifiers + KeyModifiers.SHIFT)
+                }
+            }
+            modifiers.contains(KeyModifiers.SHIFT) -> copy(code = KeyCode.Char(char.toAsciiUppercase()))
+            else -> this
+        }
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) {
+            return true
+        }
+        if (other !is KeyEvent) {
+            return false
+        }
+
+        val lhs = normalizeCase()
+        val rhs = other.normalizeCase()
+        return lhs.code == rhs.code &&
+            lhs.modifiers == rhs.modifiers &&
+            lhs.kind == rhs.kind &&
+            lhs.state == rhs.state
+    }
+
+    override fun hashCode(): Int {
+        val normalized = normalizeCase()
+        var result = normalized.code.hashCode()
+        result = 31 * result + normalized.modifiers.hashCode()
+        result = 31 * result + normalized.kind.hashCode()
+        result = 31 * result + normalized.state.hashCode()
+        return result
+    }
 }
 
 /**
@@ -315,6 +403,12 @@ sealed class KeyCode {
 
     /** Returns the character if this is a Char, otherwise null */
     fun asChar(): kotlin.Char? = (this as? Char)?.char
+
+    /** Returns true if this is the given media key. */
+    fun isMediaKey(media: MediaKeyCode): Boolean = this is Media && mediaKeyCode == media
+
+    /** Returns true if this is the given modifier key. */
+    fun isModifier(modifier: ModifierKeyCode): Boolean = this is Modifier && modifierKeyCode == modifier
 }
 
 /**
@@ -358,8 +452,8 @@ data class KeyEventState(val bits: UByte) {
     companion object {
         val NONE = KeyEventState(0u)
         val KEYPAD = KeyEventState(0b0000_0001u)
-        val CAPS_LOCK = KeyEventState(0b0000_1000u)
-        val NUM_LOCK = KeyEventState(0b0000_1000u)
+        val CAPS_LOCK = KeyEventState(0b0000_0010u)
+        val NUM_LOCK = KeyEventState(0b0000_0100u)
 
         fun empty(): KeyEventState = NONE
     }
@@ -424,14 +518,14 @@ data class MouseEvent(
  * The kind of mouse event.
  */
 sealed class MouseEventKind {
-    data object Down : MouseEventKind()
-    data object Up : MouseEventKind()
-    data object Drag : MouseEventKind()
+    data class Down(val button: MouseButton) : MouseEventKind()
+    data class Up(val button: MouseButton) : MouseEventKind()
+    data class Drag(val button: MouseButton) : MouseEventKind()
     data object Moved : MouseEventKind()
-    data class ScrollDown(val amount: UShort = 1u) : MouseEventKind()
-    data class ScrollUp(val amount: UShort = 1u) : MouseEventKind()
-    data class ScrollLeft(val amount: UShort = 1u) : MouseEventKind()
-    data class ScrollRight(val amount: UShort = 1u) : MouseEventKind()
+    data object ScrollDown : MouseEventKind()
+    data object ScrollUp : MouseEventKind()
+    data object ScrollLeft : MouseEventKind()
+    data object ScrollRight : MouseEventKind()
 }
 
 /**
@@ -442,3 +536,12 @@ enum class MouseButton {
     Right,
     Middle
 }
+
+private fun Char.isAsciiUppercase(): Boolean = code in 'A'.code..'Z'.code
+
+private fun Char.toAsciiUppercase(): Char =
+    if (code in 'a'.code..'z'.code) {
+        (code - ('a'.code - 'A'.code)).toChar()
+    } else {
+        this
+    }

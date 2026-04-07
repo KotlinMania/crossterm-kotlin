@@ -1,7 +1,8 @@
 // port-lint: source style/types/attribute.rs
 package io.github.kotlinmania.crossterm.style.types
 
-import io.github.kotlinmania.crossterm.Command
+import io.github.kotlinmania.crossterm.ansiString
+import io.github.kotlinmania.crossterm.style.SetAttribute
 
 /**
  * Represents an attribute.
@@ -34,7 +35,7 @@ import io.github.kotlinmania.crossterm.Command
  * Example:
  * ```kotlin
  * import io.github.kotlinmania.crossterm.style.types.Attribute
- * import io.github.kotlinmania.crossterm.style.types.SetAttribute
+ * import io.github.kotlinmania.crossterm.style.SetAttribute
  *
  * print("${SetAttribute(Attribute.Underlined).ansiString()} Underlined ${SetAttribute(Attribute.NoUnderline).ansiString()} No Underline")
  * ```
@@ -174,19 +175,6 @@ enum class Attribute {
             SGR[ordinal].toString()
         }
     }
-}
 
-/**
- * A command that sets an attribute.
- *
- * See [Attribute] for more info.
- *
- * ## Notes
- *
- * Commands must be executed/queued for execution otherwise they do nothing.
- */
-data class SetAttribute(val attribute: Attribute) : Command {
-    override fun writeAnsi(writer: Appendable) {
-        writer.append("\u001B[${attribute.sgr()}m")
-    }
+    override fun toString(): String = SetAttribute(this).ansiString()
 }
