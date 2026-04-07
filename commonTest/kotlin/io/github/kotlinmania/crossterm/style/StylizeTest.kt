@@ -1,6 +1,8 @@
 // port-lint: tests style/stylize.rs
 package io.github.kotlinmania.crossterm.style
 
+import io.github.kotlinmania.crossterm.style.types.Attribute
+import io.github.kotlinmania.crossterm.style.types.Color
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -33,4 +35,3 @@ class StylizeTest {
         assertTrue(finalStyle.attributes.has(Attribute.NoItalic))
     }
 }
-

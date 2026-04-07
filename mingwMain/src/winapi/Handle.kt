@@ -9,14 +9,12 @@ import platform.windows.HANDLE
 import platform.windows.INVALID_HANDLE_VALUE
 import platform.windows.STD_INPUT_HANDLE
 
-private typealias WindowsHandle = HANDLE?
-
 /**
  * Windows console handle wrapper.
  *
  * This corresponds to crossterm_winapi::Handle in Rust.
  */
-class Handle private constructor(internal val value: WindowsHandle) {
+class Handle private constructor(internal val value: HANDLE?) {
     companion object {
         /**
          * Gets the standard input handle.

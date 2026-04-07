@@ -1,52 +1,56 @@
 // port-lint: source style.rs
 package io.github.kotlinmania.crossterm.style
 
+import io.github.kotlinmania.crossterm.AnsiSupport
 import io.github.kotlinmania.crossterm.Command
+import io.github.kotlinmania.crossterm.csi
+import io.github.kotlinmania.crossterm.executeFmt
+import io.github.kotlinmania.crossterm.style.types.Attribute
+import io.github.kotlinmania.crossterm.style.types.Color
+import io.github.kotlinmania.crossterm.style.types.Colored
+import io.github.kotlinmania.crossterm.style.types.Colors
+import io.github.kotlinmania.crossterm.style.types.getEnvironmentVariable
 
 /**
- * Represents a color.
+ * Creates a [StyledContent].
+ *
+ * This could be used to style any type by applying colors and text attributes.
  */
-sealed class Color {
-    /** Resets the color to the default */
-    data object Reset : Color()
-    /** Black color */
-    data object Black : Color()
-    /** Dark grey color */
-    data object DarkGrey : Color()
-    /** Red color */
-    data object Red : Color()
-    /** Dark red color */
-    data object DarkRed : Color()
-    /** Green color */
-    data object Green : Color()
-    /** Dark green color */
-    data object DarkGreen : Color()
-    /** Yellow color */
-    data object Yellow : Color()
-    /** Dark yellow color */
-    data object DarkYellow : Color()
-    /** Blue color */
-    data object Blue : Color()
-    /** Dark blue color */
-    data object DarkBlue : Color()
-    /** Magenta color */
-    data object Magenta : Color()
-    /** Dark magenta color */
-    data object DarkMagenta : Color()
-    /** Cyan color */
-    data object Cyan : Color()
-    /** Dark cyan color */
-    data object DarkCyan : Color()
-    /** White color */
-    data object White : Color()
-    /** Grey color */
-    data object Grey : Color()
+fun <D> style(value: D): StyledContent<D> = ContentStyle.new().apply(value)
 
-    /** An ANSI color (0-255) */
-    data class Ansi(val value: UByte) : Color()
+/**
+ * Returns available color count.
+ *
+ * Notes:
+ * This does not always provide a good result.
+ */
+fun availableColorCount(): UShort {
+    // NOTE: The upstream Rust code returns u16::MAX on Windows if ANSI is supported.
+    // We cannot reliably detect the target platform from commonMain, so we keep the env-var
+    // based fallback which works on Unix and on most modern Windows terminals too.
+    val defaultCount: UShort = 8u
 
-    /** An RGB color */
-    data class Rgb(val r: UByte, val g: UByte, val b: UByte) : Color()
+    val colorTerm = getEnvironmentVariable("COLORTERM")
+    val term = colorTerm ?: getEnvironmentVariable("TERM")
+
+    if (AnsiSupport.supportsAnsi() && term == null && colorTerm == null) {
+        // Mirror Rust behavior for terminals that report ANSI but don't expose TERM/COLORTERM.
+        return UShort.MAX_VALUE
+    }
+
+    val value = term ?: return defaultCount
+    return when {
+        value.contains("24bit") || value.contains("truecolor") -> UShort.MAX_VALUE
+        value.contains("256") -> 256u
+        else -> defaultCount
+    }
+}
+
+/**
+ * Forces colored output on or off globally, overriding NO_COLOR.
+ */
+fun forceColorOutput(enabled: Boolean) {
+    Colored.setAnsiColorDisabled(!enabled)
 }
 
 /**
@@ -54,7 +58,7 @@ sealed class Color {
  */
 data class SetForegroundColor(val color: Color) : Command {
     override fun writeAnsi(writer: Appendable) {
-        writer.append(colorToForegroundAnsi(color))
+        writer.append(csi("${Colored.ForegroundColor(color)}m"))
     }
 }
 
@@ -63,190 +67,156 @@ data class SetForegroundColor(val color: Color) : Command {
  */
 data class SetBackgroundColor(val color: Color) : Command {
     override fun writeAnsi(writer: Appendable) {
-        writer.append(colorToBackgroundAnsi(color))
+        writer.append(csi("${Colored.BackgroundColor(color)}m"))
     }
 }
 
 /**
- * A command that sets both foreground and background colors.
+ * A command that sets the underline color.
  */
-data class SetColors(val foreground: Color, val background: Color) : Command {
+data class SetUnderlineColor(val color: Color) : Command {
     override fun writeAnsi(writer: Appendable) {
-        writer.append(colorToForegroundAnsi(foreground))
-        writer.append(colorToBackgroundAnsi(background))
+        writer.append(csi("${Colored.UnderlineColor(color)}m"))
+    }
+
+    override fun executeWinapi() {
+        throw IllegalStateException("SetUnderlineColor not supported by winapi.")
     }
 }
 
 /**
- * A command that resets all colors to default.
+ * A command that optionally sets the foreground and/or background color.
  */
-data object ResetColor : Command {
+data class SetColors(val colors: Colors) : Command {
     override fun writeAnsi(writer: Appendable) {
-        writer.append("\u001B[0m")
+        val foreground = colors.foreground
+        val background = colors.background
+        when {
+            foreground != null && background != null -> writer.append(
+                csi("${Colored.ForegroundColor(foreground)};${Colored.BackgroundColor(background)}m")
+            )
+            foreground != null -> writer.append(csi("${Colored.ForegroundColor(foreground)}m"))
+            background != null -> writer.append(csi("${Colored.BackgroundColor(background)}m"))
+            else -> Unit
+        }
     }
+}
+
+/**
+ * A command that sets an attribute.
+ */
+data class SetAttribute(val attribute: Attribute) : Command {
+    override fun writeAnsi(writer: Appendable) {
+        writer.append(csi("${attribute.sgr()}m"))
+    }
+}
+
+/**
+ * A command that sets several attributes.
+ */
+data class SetAttributes(val attributes: Attributes) : Command {
+    override fun writeAnsi(writer: Appendable) {
+        for (attr in Attribute.iterator()) {
+            if (attributes.has(attr)) {
+                SetAttribute(attr).writeAnsi(writer)
+            }
+        }
+    }
+}
+
+/**
+ * A command that sets a style (colors and attributes).
+ */
+data class SetStyle(val style: ContentStyle) : Command {
+    override fun writeAnsi(writer: Appendable) {
+        style.backgroundColor?.let { bg ->
+            SetBackgroundColor(bg).writeAnsi(writer)
+        }
+        style.foregroundColor?.let { fg ->
+            SetForegroundColor(fg).writeAnsi(writer)
+        }
+        style.underlineColor?.let { ul ->
+            SetUnderlineColor(ul).writeAnsi(writer)
+        }
+        if (!style.attributes.isEmpty()) {
+            SetAttributes(style.attributes).writeAnsi(writer)
+        }
+    }
+
+    override fun executeWinapi() {
+        throw IllegalStateException("tried to execute SetStyle command using WinAPI, use ANSI instead")
+    }
+
+    override fun isAnsiCodeSupported(): Boolean = true
 }
 
 /**
  * A command that prints styled content.
  */
-data class Print(val content: String) : Command {
+data class PrintStyledContent<D>(val styledContent: StyledContent<D>) : Command {
     override fun writeAnsi(writer: Appendable) {
-        writer.append(content)
-    }
-}
+        val style = styledContent.style()
 
-/**
- * Text attributes.
- */
-enum class Attribute {
-    /** Resets all attributes */
-    Reset,
-    /** Bold text */
-    Bold,
-    /** Dim text */
-    Dim,
-    /** Italic text */
-    Italic,
-    /** Underlined text */
-    Underlined,
-    /** Double underlined text */
-    DoubleUnderlined,
-    /** Undercurl (curly underline) */
-    Undercurled,
-    /** Dotted underline */
-    Underdotted,
-    /** Dashed underline */
-    Underdashed,
-    /** Slow blink */
-    SlowBlink,
-    /** Rapid blink */
-    RapidBlink,
-    /** Reverse video (swap foreground/background) */
-    Reverse,
-    /** Hidden text */
-    Hidden,
-    /** Crossed out text */
-    CrossedOut,
-    /** Fraktur (rarely supported) */
-    Fraktur,
-    /** No bold */
-    NoBold,
-    /** Normal intensity */
-    NormalIntensity,
-    /** No italic */
-    NoItalic,
-    /** No underline */
-    NoUnderline,
-    /** No blink */
-    NoBlink,
-    /** No reverse */
-    NoReverse,
-    /** No hidden */
-    NoHidden,
-    /** Not crossed out */
-    NotCrossedOut,
-    /** Framed */
-    Framed,
-    /** Encircled */
-    Encircled,
-    /** Overlined */
-    OverLined,
-    /** Not framed or encircled */
-    NotFramedOrEncircled,
-    /** Not overlined */
-    NotOverLined;
+        var resetBackground = false
+        var resetForeground = false
+        var reset = false
 
-    /**
-     * Returns a u32 with one bit set, which is the
-     * signature of this attribute in the Attributes
-     * bitset.
-     *
-     * The +1 enables storing Reset (whose index is 0)
-     * in the bitset Attributes.
-     */
-    fun bytes(): UInt = 1u shl (ordinal + 1)
-}
-
-/**
- * A command that sets a text attribute.
- */
-data class SetAttribute(val attribute: Attribute) : Command {
-    override fun writeAnsi(writer: Appendable) {
-        val code = when (attribute) {
-            Attribute.Reset -> 0
-            Attribute.Bold -> 1
-            Attribute.Dim -> 2
-            Attribute.Italic -> 3
-            Attribute.Underlined -> 4
-            Attribute.DoubleUnderlined -> 21
-            Attribute.Undercurled -> 4 // Same as underlined in basic ANSI
-            Attribute.Underdotted -> 4
-            Attribute.Underdashed -> 4
-            Attribute.SlowBlink -> 5
-            Attribute.RapidBlink -> 6
-            Attribute.Reverse -> 7
-            Attribute.Hidden -> 8
-            Attribute.CrossedOut -> 9
-            Attribute.Fraktur -> 20
-            Attribute.NoBold -> 21
-            Attribute.NormalIntensity -> 22
-            Attribute.NoItalic -> 23
-            Attribute.NoUnderline -> 24
-            Attribute.NoBlink -> 25
-            Attribute.NoReverse -> 27
-            Attribute.NoHidden -> 28
-            Attribute.NotCrossedOut -> 29
-            Attribute.Framed -> 51
-            Attribute.Encircled -> 52
-            Attribute.OverLined -> 53
-            Attribute.NotFramedOrEncircled -> 54
-            Attribute.NotOverLined -> 55
+        style.backgroundColor?.let { bg ->
+            executeFmt(writer, SetBackgroundColor(bg))
+            resetBackground = true
         }
-        writer.append("\u001B[${code}m")
+        style.foregroundColor?.let { fg ->
+            executeFmt(writer, SetForegroundColor(fg))
+            resetForeground = true
+        }
+        style.underlineColor?.let { ul ->
+            executeFmt(writer, SetUnderlineColor(ul))
+            resetForeground = true
+        }
+
+        if (!style.attributes.isEmpty()) {
+            executeFmt(writer, SetAttributes(style.attributes))
+            reset = true
+        }
+
+        writer.append(styledContent.content().toString())
+
+        if (reset) {
+            // NOTE: This will reset colors even though self has no colors, hence produce unexpected resets.
+            // NOTE: The upstream implementation notes this as a known issue (attributes-only reset).
+            executeFmt(writer, ResetColor)
+        } else {
+            // NOTE: Since the above bug, we do not need to reset colors when we reset attributes.
+            if (resetBackground) {
+                executeFmt(writer, SetBackgroundColor(Color.Reset))
+            }
+            if (resetForeground) {
+                executeFmt(writer, SetForegroundColor(Color.Reset))
+            }
+        }
     }
 }
 
-// Helper functions for color conversion
-private fun colorToForegroundAnsi(color: Color): String = when (color) {
-    Color.Reset -> "\u001B[39m"
-    Color.Black -> "\u001B[30m"
-    Color.DarkGrey -> "\u001B[90m"
-    Color.Red -> "\u001B[91m"
-    Color.DarkRed -> "\u001B[31m"
-    Color.Green -> "\u001B[92m"
-    Color.DarkGreen -> "\u001B[32m"
-    Color.Yellow -> "\u001B[93m"
-    Color.DarkYellow -> "\u001B[33m"
-    Color.Blue -> "\u001B[94m"
-    Color.DarkBlue -> "\u001B[34m"
-    Color.Magenta -> "\u001B[95m"
-    Color.DarkMagenta -> "\u001B[35m"
-    Color.Cyan -> "\u001B[96m"
-    Color.DarkCyan -> "\u001B[36m"
-    Color.White -> "\u001B[97m"
-    Color.Grey -> "\u001B[37m"
-    is Color.Ansi -> "\u001B[38;5;${color.value}m"
-    is Color.Rgb -> "\u001B[38;2;${color.r};${color.g};${color.b}m"
+/**
+ * A command that resets the colors back to default.
+ */
+data object ResetColor : Command {
+    override fun writeAnsi(writer: Appendable) {
+        writer.append(csi("0m"))
+    }
 }
 
-private fun colorToBackgroundAnsi(color: Color): String = when (color) {
-    Color.Reset -> "\u001B[49m"
-    Color.Black -> "\u001B[40m"
-    Color.DarkGrey -> "\u001B[100m"
-    Color.Red -> "\u001B[101m"
-    Color.DarkRed -> "\u001B[41m"
-    Color.Green -> "\u001B[102m"
-    Color.DarkGreen -> "\u001B[42m"
-    Color.Yellow -> "\u001B[103m"
-    Color.DarkYellow -> "\u001B[43m"
-    Color.Blue -> "\u001B[104m"
-    Color.DarkBlue -> "\u001B[44m"
-    Color.Magenta -> "\u001B[105m"
-    Color.DarkMagenta -> "\u001B[45m"
-    Color.Cyan -> "\u001B[106m"
-    Color.DarkCyan -> "\u001B[46m"
-    Color.White -> "\u001B[107m"
-    Color.Grey -> "\u001B[47m"
-    is Color.Ansi -> "\u001B[48;5;${color.value}m"
-    is Color.Rgb -> "\u001B[48;2;${color.r};${color.g};${color.b}m"
+/**
+ * A command that prints the given displayable type.
+ */
+data class Print<D>(val value: D) : Command {
+    override fun writeAnsi(writer: Appendable) {
+        writer.append(value.toString())
+    }
+
+    override fun executeWinapi() {
+        throw IllegalStateException("tried to execute Print command using WinAPI, use ANSI instead")
+    }
+
+    override fun isAnsiCodeSupported(): Boolean = true
 }

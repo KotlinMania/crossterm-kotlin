@@ -1,6 +1,7 @@
 // port-lint: source event/sys/unix/waker/mio.rs
 package io.github.kotlinmania.crossterm.event.sys.unix.waker
 
+import io.github.kotlinmania.crossterm.event.sys.Waker
 import kotlinx.atomicfu.locks.ReentrantLock
 import kotlinx.atomicfu.locks.withLock
 import kotlinx.cinterop.ExperimentalForeignApi
@@ -34,7 +35,7 @@ import platform.posix.write
 class MioWaker private constructor(
     private val readFd: Int,
     private val writeFd: Int
-) : AutoCloseable {
+) : Waker, AutoCloseable {
 
     /**
      * Lock protecting the pipe file descriptors.
@@ -104,7 +105,7 @@ class MioWaker private constructor(
      *
      * @throws IllegalStateException if writing to the pipe fails.
      */
-    fun wake() {
+    override fun wake() {
         lock.withLock {
             if (closed) {
                 return

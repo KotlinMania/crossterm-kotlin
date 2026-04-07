@@ -9,21 +9,6 @@ package io.github.kotlinmania.crossterm.terminal.sys
  */
 
 /**
- * Terminal window size with both character and pixel dimensions.
- *
- * @property columns The number of columns (characters width)
- * @property rows The number of rows (characters height)
- * @property width The width in pixels
- * @property height The height in pixels
- */
-data class WindowSize(
-    val columns: UShort,
-    val rows: UShort,
-    val width: UShort,
-    val height: UShort
-)
-
-/**
  * Enables raw mode for the terminal.
  *
  * Raw mode disables:
@@ -79,7 +64,7 @@ expect fun size(): Pair<UShort, UShort>
  * @return The window size with columns, rows, width, and height
  * @throws Exception if the window size cannot be determined
  */
-expect fun windowSize(): WindowSize
+expect fun windowSize(): io.github.kotlinmania.crossterm.terminal.WindowSize
 
 /**
  * Queries the terminal's support for progressive keyboard enhancement.

@@ -1,6 +1,9 @@
 // port-lint: source style/attributes.rs
 package io.github.kotlinmania.crossterm.style
 
+import io.github.kotlinmania.crossterm.style.types.Attribute
+import io.github.kotlinmania.crossterm.style.types.Color
+
 /**
  * A bitset for all possible attributes.
  *
@@ -10,7 +13,7 @@ package io.github.kotlinmania.crossterm.style
  * Example:
  * ```kotlin
  * import io.github.kotlinmania.crossterm.style.Attributes
- * import io.github.kotlinmania.crossterm.style.Attribute
+ * import io.github.kotlinmania.crossterm.style.types.Attribute
  *
  * // Create from a single attribute
  * val attrs = Attributes.from(Attribute.Bold)

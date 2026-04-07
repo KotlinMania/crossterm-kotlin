@@ -1,7 +1,7 @@
 // port-lint: tests style/attributes.rs
 package io.github.kotlinmania.crossterm.style
 
-import io.github.kotlinmania.crossterm.style.Attribute
+import io.github.kotlinmania.crossterm.style.types.Attribute
 import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue

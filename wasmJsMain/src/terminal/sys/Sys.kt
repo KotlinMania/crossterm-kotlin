@@ -1,12 +1,14 @@
-// Stub implementation for WasmJS - web shell integration not yet implemented
+// port-lint: source terminal/sys.rs
 package io.github.kotlinmania.crossterm.terminal.sys
 
-private fun notYetImplemented(): Nothing =
-    throw NotImplementedError("Terminal operations for web shells are not yet implemented on WasmJS")
+import io.github.kotlinmania.crossterm.terminal.WindowSize
 
-actual fun enableRawMode(): Unit = notYetImplemented()
-actual fun disableRawMode(): Unit = notYetImplemented()
-actual fun isRawModeEnabled(): Boolean = notYetImplemented()
-actual fun size(): Pair<UShort, UShort> = notYetImplemented()
-actual fun windowSize(): WindowSize = notYetImplemented()
-actual fun supportsKeyboardEnhancement(): Boolean = notYetImplemented()
+private fun unsupported(): Nothing =
+    throw IllegalStateException("Terminal operations are not supported in WasmJS targets")
+
+actual fun enableRawMode(): Unit = unsupported()
+actual fun disableRawMode(): Unit = unsupported()
+actual fun isRawModeEnabled(): Boolean = unsupported()
+actual fun size(): Pair<UShort, UShort> = unsupported()
+actual fun windowSize(): WindowSize = unsupported()
+actual fun supportsKeyboardEnhancement(): Boolean = false

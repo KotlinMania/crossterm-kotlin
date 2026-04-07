@@ -10,7 +10,7 @@ plugins {
 }
 
 group = "io.github.kotlinmania"
-version = "0.1.2"
+version = "0.1.3"
 
 val androidSdkDir: String? =
     providers.environmentVariable("ANDROID_SDK_ROOT").orNull
@@ -88,6 +88,13 @@ kotlin {
             }
         }
 
+        // Shared implementation for platforms that behave like "Other" in Rust cfg blocks.
+        // This avoids per-target "stub" actuals.
+        val otherMain by creating {
+            dependsOn(commonMain)
+            kotlin.srcDir("otherMain/src")
+        }
+
         // nativeMain is now empty - shared native code would go in nativeMain/src
         // but platform-specific implementations go in posixMain or mingwMain
         val nativeMain by getting {
@@ -105,31 +112,45 @@ kotlin {
         // compile as metadata. Keep them free of `platform.*` references.
         val macosMain by getting {
             dependsOn(desktopPosixMain)
+            kotlin.srcDir("macosMain/src")
         }
         val linuxMain by getting {
             dependsOn(desktopPosixMain)
+            dependsOn(otherMain)
         }
 
         // Leaf native targets can contain `platform.posix` code.
         val linuxX64Main by getting {
-            dependsOn(desktopPosixMain)
             kotlin.srcDir("posixMain/src")
             kotlin.srcDir("linuxMain/src")
         }
         val macosArm64Main by getting {
-            dependsOn(desktopPosixMain)
             kotlin.srcDir("posixMain/src")
             kotlin.srcDir("macosArm64Main/src")
         }
         val macosX64Main by getting {
-            dependsOn(desktopPosixMain)
             kotlin.srcDir("posixMain/src")
             kotlin.srcDir("macosX64Main/src")
         }
 
-        // iOS needs its own stubs since it doesn't have terminal access
         val iosMain by getting {
+            dependsOn(otherMain)
+            dependsOn(desktopPosixMain)
             kotlin.srcDir("iosMain/src")
+        }
+
+        // Leaf iOS targets can contain `platform.posix` code via posixMain/src.
+        val iosArm64Main by getting {
+            kotlin.srcDir("posixMain/src")
+            kotlin.srcDir("iosArm64Main/src")
+        }
+        val iosX64Main by getting {
+            kotlin.srcDir("posixMain/src")
+            kotlin.srcDir("iosX64Main/src")
+        }
+        val iosSimulatorArm64Main by getting {
+            kotlin.srcDir("posixMain/src")
+            kotlin.srcDir("iosSimulatorArm64Main/src")
         }
 
         // mingwMain contains Windows-specific implementations
@@ -138,14 +159,17 @@ kotlin {
         }
 
         val jsMain by getting {
+            dependsOn(otherMain)
             kotlin.srcDir("jsMain/src")
         }
 
         val wasmJsMain by getting {
+            dependsOn(otherMain)
             kotlin.srcDir("wasmJsMain/src")
         }
 
         val androidMain by getting {
+            dependsOn(otherMain)
             kotlin.srcDir("androidMain/src")
         }
     }

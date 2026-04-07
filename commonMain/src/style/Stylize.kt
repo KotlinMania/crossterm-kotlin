@@ -1,6 +1,9 @@
 // port-lint: source style/stylize.rs
 package io.github.kotlinmania.crossterm.style
 
+import io.github.kotlinmania.crossterm.style.types.Attribute
+import io.github.kotlinmania.crossterm.style.types.Color
+
 /**
  * Provides a set of methods to set attributes and colors.
  *
@@ -236,8 +239,6 @@ interface Stylize<S : Stylize<S>> {
  * @param content The content to style.
  * @return A new [StyledContent] with default style.
  */
-fun <D> style(content: D): StyledContent<D> = StyledContent(ContentStyle.new(), content)
-
 // ============================================================================
 // ContentStyle Stylize Extensions
 // ============================================================================
@@ -250,26 +251,34 @@ fun ContentStyle.stylize(): ContentStyle = this
 /**
  * Extension function to set foreground color on [ContentStyle].
  */
-fun ContentStyle.with(color: Color): ContentStyle =
-    copy(foregroundColor = color)
+fun ContentStyle.with(color: Color): ContentStyle {
+    foregroundColor = color
+    return this
+}
 
 /**
  * Extension function to set background color on [ContentStyle].
  */
-fun ContentStyle.on(color: Color): ContentStyle =
-    copy(backgroundColor = color)
+fun ContentStyle.on(color: Color): ContentStyle {
+    backgroundColor = color
+    return this
+}
 
 /**
  * Extension function to set underline color on [ContentStyle].
  */
-fun ContentStyle.underline(color: Color): ContentStyle =
-    copy(underlineColor = color)
+fun ContentStyle.underline(color: Color): ContentStyle {
+    underlineColor = color
+    return this
+}
 
 /**
  * Extension function to add an attribute on [ContentStyle].
  */
-fun ContentStyle.attribute(attr: Attribute): ContentStyle =
-    copy(attributes = attributes.set(attr))
+fun ContentStyle.attribute(attr: Attribute): ContentStyle {
+    attributes = attributes.set(attr)
+    return this
+}
 
 /** Applies the [Attribute.Reset] attribute. */
 fun ContentStyle.reset(): ContentStyle = attribute(Attribute.Reset)
@@ -466,26 +475,39 @@ fun <D> StyledContent<D>.stylize(): StyledContent<D> = this
 /**
  * Extension function to set foreground color on [StyledContent].
  */
-fun <D> StyledContent<D>.with(color: Color): StyledContent<D> =
-    withStyle { it.copy(foregroundColor = color) }
+fun <D> StyledContent<D>.with(color: Color): StyledContent<D> {
+    val styled = stylize()
+    styled.asMut().foregroundColor = color
+    return styled
+}
 
 /**
  * Extension function to set background color on [StyledContent].
  */
-fun <D> StyledContent<D>.on(color: Color): StyledContent<D> =
-    withStyle { it.copy(backgroundColor = color) }
+fun <D> StyledContent<D>.on(color: Color): StyledContent<D> {
+    val styled = stylize()
+    styled.asMut().backgroundColor = color
+    return styled
+}
 
 /**
  * Extension function to set underline color on [StyledContent].
  */
-fun <D> StyledContent<D>.underline(color: Color): StyledContent<D> =
-    withStyle { it.copy(underlineColor = color) }
+fun <D> StyledContent<D>.underline(color: Color): StyledContent<D> {
+    val styled = stylize()
+    styled.asMut().underlineColor = color
+    return styled
+}
 
 /**
  * Extension function to add an attribute on [StyledContent].
  */
-fun <D> StyledContent<D>.attribute(attr: Attribute): StyledContent<D> =
-    withStyle { it.copy(attributes = it.attributes.set(attr)) }
+fun <D> StyledContent<D>.attribute(attr: Attribute): StyledContent<D> {
+    val styled = stylize()
+    val style = styled.asMut()
+    style.attributes = style.attributes.set(attr)
+    return styled
+}
 
 /** Applies the [Attribute.Reset] attribute to the text. */
 fun <D> StyledContent<D>.reset(): StyledContent<D> = attribute(Attribute.Reset)

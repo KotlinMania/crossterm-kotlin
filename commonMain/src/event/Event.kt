@@ -1,4 +1,54 @@
 // port-lint: source event.rs
+/**
+ * # Event
+ *
+ * The `event` module provides the functionality to read keyboard, mouse, and terminal resize
+ * events.
+ *
+ * - [read] returns an [Event] immediately if one is available, or blocks until one is available.
+ * - [poll] lets you check whether an [Event] is available within the given period of time.
+ *   In other words, whether a subsequent call to [read] will block or not.
+ *
+ * It is not allowed to call these functions from different threads or combine them with
+ * `EventStream`. You are allowed to either:
+ *
+ * - use [read] and [poll] on any, but the same, thread
+ * - or use `EventStream`
+ *
+ * Make sure to enable raw mode in order for keyboard events to work properly.
+ *
+ * ## Mouse and Focus Events
+ *
+ * Mouse and focus events are not enabled by default. You have to enable them with
+ * [EnableMouseCapture] and [EnableFocusChange].
+ *
+ * ## Examples
+ *
+ * Blocking read:
+ * ```kotlin
+ * while (true) {
+ *     when (val event = read()) {
+ *         Event.FocusGained -> println("FocusGained")
+ *         Event.FocusLost -> println("FocusLost")
+ *         is Event.Key -> println(event.keyEvent)
+ *         is Event.Mouse -> println(event.mouseEvent)
+ *         is Event.Paste -> println(event.content)
+ *         is Event.Resize -> println("New size ${event.columns}x${event.rows}")
+ *     }
+ * }
+ * ```
+ *
+ * Non-blocking read:
+ * ```kotlin
+ * while (true) {
+ *     if (poll(kotlin.time.Duration.parse("100ms"))) {
+ *         println(read())
+ *     } else {
+ *         // Timeout expired and no Event is available.
+ *     }
+ * }
+ * ```
+ */
 package io.github.kotlinmania.crossterm.event
 
 import io.github.kotlinmania.crossterm.Command
@@ -55,9 +105,16 @@ data class KeyboardEnhancementFlags(val bits: UByte) {
 /**
  * Checks if there is an [Event] available.
  *
- * Returns `true` if an [Event] is available otherwise it returns `false`.
+ * Returns `true` if an [Event] is available, otherwise it returns `false`.
  *
  * `true` guarantees that subsequent call to [read] won't block.
+ *
+ * @param timeout Maximum waiting time for event availability.
+ *
+ * Example:
+ * ```kotlin
+ * val isEventAvailable = poll(kotlin.time.Duration.ZERO)
+ * ```
  */
 fun poll(timeout: Duration): Boolean =
     io.github.kotlinmania.crossterm.event.poll(timeout, EventFilter)
@@ -66,6 +123,13 @@ fun poll(timeout: Duration): Boolean =
  * Reads a single [Event].
  *
  * This function blocks until an [Event] is available. Combine it with [poll] to get non-blocking reads.
+ *
+ * Example:
+ * ```kotlin
+ * while (true) {
+ *     println(read())
+ * }
+ * ```
  */
 fun read(): Event {
     return when (val internalEvent = io.github.kotlinmania.crossterm.event.read(EventFilter)) {
@@ -78,6 +142,18 @@ fun read(): Event {
  * Attempts to read a single [Event] without blocking the thread.
  *
  * If no event is found, `null` is returned.
+ *
+ * Example:
+ * ```kotlin
+ * while (true) {
+ *     if (poll(kotlin.time.Duration.parse("100ms"))) {
+ *         while (true) {
+ *             val event = tryRead() ?: break
+ *             println(event)
+ *         }
+ *     }
+ * }
+ * ```
  */
 fun tryRead(): Event? {
     return when (val internalEvent = io.github.kotlinmania.crossterm.event.tryRead(EventFilter)) {
@@ -180,9 +256,9 @@ data object PopKeyboardEnhancementFlags : Command {
 }
 
 /**
- * Represents a terminal event.
+ * Represents an event.
  *
- * Events can be read using the event reading functions or the EventStream.
+ * Events can be read using the event reading functions or `EventStream`.
  */
 sealed class Event {
     /** The terminal gained focus */
@@ -203,48 +279,96 @@ sealed class Event {
     /** A resize event with new dimensions (columns, rows) */
     data class Resize(val columns: UShort, val rows: UShort) : Event()
 
-    /** Returns true if the event is a key press event */
+    /**
+     * Returns `true` if the event is a key press event.
+     *
+     * This is useful for waiting for any key press event, regardless of the key that was pressed.
+     *
+     * Returns `false` for key release and repeat events, as well as for non-key events.
+     */
     fun isKeyPress(): Boolean = this is Key && keyEvent.kind == KeyEventKind.Press
 
-    /** Returns true if the event is a key release event */
+    /** Returns `true` if the event is a key release event. */
     fun isKeyRelease(): Boolean = this is Key && keyEvent.kind == KeyEventKind.Release
 
-    /** Returns true if the event is a key repeat event */
+    /** Returns `true` if the event is a key repeat event. */
     fun isKeyRepeat(): Boolean = this is Key && keyEvent.kind == KeyEventKind.Repeat
 
-    /** Returns the key event if this is a Key event, otherwise null */
+    /**
+     * Returns the key event if this is a key event, otherwise `null`.
+     *
+     * This is a convenience method that makes apps that only care about key events easier to
+     * write.
+     */
     fun asKeyEvent(): KeyEvent? = (this as? Key)?.keyEvent
 
-    /** Returns the key event if this is a key press event, otherwise null. */
+    /**
+     * Returns the key event if this is a key press event, otherwise `null`.
+     *
+     * This is a convenience method that makes apps that only care about key press events, and not
+     * key release or repeat events, easier to write.
+     */
     fun asKeyPressEvent(): KeyEvent? = when (this) {
         is Key -> if (isKeyPress()) keyEvent else null
         else -> null
     }
 
-    /** Returns the key event if this is a key release event, otherwise null. */
+    /** Returns the key event if this is a key release event, otherwise `null`. */
     fun asKeyReleaseEvent(): KeyEvent? = when (this) {
         is Key -> if (isKeyRelease()) keyEvent else null
         else -> null
     }
 
-    /** Returns the key event if this is a key repeat event, otherwise null. */
+    /** Returns the key event if this is a key repeat event, otherwise `null`. */
     fun asKeyRepeatEvent(): KeyEvent? = when (this) {
         is Key -> if (isKeyRepeat()) keyEvent else null
         else -> null
     }
 
-    /** Returns the mouse event if this is a mouse event, otherwise null. */
+    /**
+     * Returns the mouse event if this is a mouse event, otherwise `null`.
+     *
+     * This is a convenience method that makes code which only cares about mouse events easier to
+     * write.
+     */
     fun asMouseEvent(): MouseEvent? = (this as? Mouse)?.mouseEvent
 
-    /** Returns the pasted text if this is a paste event, otherwise null. */
+    /**
+     * Returns the pasted string if this is a paste event, otherwise `null`.
+     *
+     * This is a convenience method that makes code which only cares about paste events easier to
+     * write.
+     */
     fun asPasteEvent(): String? = (this as? Paste)?.content
 
-    /** Returns the terminal size if this is a resize event, otherwise null. */
+    /**
+     * Returns the size as a pair if this is a resize event, otherwise `null`.
+     *
+     * This is a convenience method that makes code which only cares about resize events easier to
+     * write.
+     */
     fun asResizeEvent(): Pair<UShort, UShort>? = when (this) {
         is Resize -> Pair(columns, rows)
         else -> null
     }
 }
+
+// Platform-specific display strings in Rust are selected via `#[cfg(...)]` inside `impl Display`.
+// Kotlin Multiplatform uses `expect`/`actual` as the closest analogue of Rust cfg blocks.
+internal expect fun keyCodeBackspaceDisplayName(): String
+internal expect fun keyCodeDeleteDisplayName(): String
+internal expect fun keyCodeEnterDisplayName(): String
+
+internal expect fun keyModifiersControlDisplayName(): String
+internal expect fun keyModifiersAltDisplayName(): String
+internal expect fun keyModifiersSuperDisplayName(): String
+
+internal expect fun modifierKeyCodeLeftControlDisplayName(): String
+internal expect fun modifierKeyCodeLeftAltDisplayName(): String
+internal expect fun modifierKeyCodeLeftSuperDisplayName(): String
+internal expect fun modifierKeyCodeRightControlDisplayName(): String
+internal expect fun modifierKeyCodeRightAltDisplayName(): String
+internal expect fun modifierKeyCodeRightSuperDisplayName(): String
 
 /**
  * Represents a key event.
@@ -262,6 +386,9 @@ data class KeyEvent(
     companion object {
         fun new(code: KeyCode, modifiers: KeyModifiers = KeyModifiers.NONE): KeyEvent =
             KeyEvent(code, modifiers, KeyEventKind.Press, KeyEventState.NONE)
+
+        fun from(code: KeyCode): KeyEvent =
+            KeyEvent(code, KeyModifiers.empty(), KeyEventKind.Press, KeyEventState.empty())
 
         fun newWithKind(
             code: KeyCode,
@@ -337,63 +464,71 @@ data class KeyEvent(
  */
 sealed class KeyCode {
     /** Backspace key */
-    data object Backspace : KeyCode()
+    object Backspace : KeyCode()
     /** Enter key */
-    data object Enter : KeyCode()
+    object Enter : KeyCode()
     /** Left arrow key */
-    data object Left : KeyCode()
+    object Left : KeyCode()
     /** Right arrow key */
-    data object Right : KeyCode()
+    object Right : KeyCode()
     /** Up arrow key */
-    data object Up : KeyCode()
+    object Up : KeyCode()
     /** Down arrow key */
-    data object Down : KeyCode()
+    object Down : KeyCode()
     /** Home key */
-    data object Home : KeyCode()
+    object Home : KeyCode()
     /** End key */
-    data object End : KeyCode()
+    object End : KeyCode()
     /** Page up key */
-    data object PageUp : KeyCode()
+    object PageUp : KeyCode()
     /** Page down key */
-    data object PageDown : KeyCode()
+    object PageDown : KeyCode()
     /** Tab key */
-    data object Tab : KeyCode()
+    object Tab : KeyCode()
     /** Shift + Tab key */
-    data object BackTab : KeyCode()
+    object BackTab : KeyCode()
     /** Delete key */
-    data object Delete : KeyCode()
+    object Delete : KeyCode()
     /** Insert key */
-    data object Insert : KeyCode()
+    object Insert : KeyCode()
     /** Escape key */
-    data object Esc : KeyCode()
+    object Esc : KeyCode()
     /** Caps Lock key */
-    data object CapsLock : KeyCode()
+    object CapsLock : KeyCode()
     /** Scroll Lock key */
-    data object ScrollLock : KeyCode()
+    object ScrollLock : KeyCode()
     /** Num Lock key */
-    data object NumLock : KeyCode()
+    object NumLock : KeyCode()
     /** Print Screen key */
-    data object PrintScreen : KeyCode()
+    object PrintScreen : KeyCode()
     /** Pause key */
-    data object Pause : KeyCode()
+    object Pause : KeyCode()
     /** Menu key */
-    data object Menu : KeyCode()
+    object Menu : KeyCode()
     /** Keypad Begin key */
-    data object KeypadBegin : KeyCode()
+    object KeypadBegin : KeyCode()
     /** Null */
-    data object Null : KeyCode()
+    object Null : KeyCode()
 
     /** Function key (F1-F12, etc.) */
-    data class F(val number: UByte) : KeyCode()
+    data class F(val number: UByte) : KeyCode() {
+        override fun toString(): String = super.toString()
+    }
 
     /** A character key */
-    data class Char(val char: kotlin.Char) : KeyCode()
+    data class Char(val char: kotlin.Char) : KeyCode() {
+        override fun toString(): String = super.toString()
+    }
 
     /** A media key */
-    data class Media(val mediaKeyCode: MediaKeyCode) : KeyCode()
+    data class Media(val mediaKeyCode: MediaKeyCode) : KeyCode() {
+        override fun toString(): String = super.toString()
+    }
 
     /** A modifier key */
-    data class Modifier(val modifierKeyCode: ModifierKeyCode) : KeyCode()
+    data class Modifier(val modifierKeyCode: ModifierKeyCode) : KeyCode() {
+        override fun toString(): String = super.toString()
+    }
 
     /** Returns true if this is the given function key */
     fun isFunctionKey(n: UByte): Boolean = this is F && number == n
@@ -409,6 +544,37 @@ sealed class KeyCode {
 
     /** Returns true if this is the given modifier key. */
     fun isModifier(modifier: ModifierKeyCode): Boolean = this is Modifier && modifierKeyCode == modifier
+
+    override fun toString(): String =
+        when (this) {
+            Backspace -> keyCodeBackspaceDisplayName()
+            Enter -> keyCodeEnterDisplayName()
+            Left -> "Left"
+            Right -> "Right"
+            Up -> "Up"
+            Down -> "Down"
+            Home -> "Home"
+            End -> "End"
+            PageUp -> "Page Up"
+            PageDown -> "Page Down"
+            Tab -> "Tab"
+            BackTab -> "Back Tab"
+            Delete -> keyCodeDeleteDisplayName()
+            Insert -> "Insert"
+            Esc -> "Esc"
+            CapsLock -> "Caps Lock"
+            ScrollLock -> "Scroll Lock"
+            NumLock -> "Num Lock"
+            PrintScreen -> "Print Screen"
+            Pause -> "Pause"
+            Menu -> "Menu"
+            KeypadBegin -> "Begin"
+            Null -> "Null"
+            is F -> "F$number"
+            is Char -> if (char == ' ') "Space" else char.toString()
+            is Media -> mediaKeyCode.toString()
+            is Modifier -> modifierKeyCode.toString()
+        }
 }
 
 /**
@@ -434,6 +600,29 @@ data class KeyModifiers(val bits: UByte) {
         (bits.toInt() and other.bits.toInt()) == other.bits.toInt()
 
     fun isEmpty(): Boolean = bits == 0u.toUByte()
+
+    override fun toString(): String {
+        val parts = mutableListOf<String>()
+        if (contains(SHIFT)) {
+            parts.add("Shift")
+        }
+        if (contains(CONTROL)) {
+            parts.add(keyModifiersControlDisplayName())
+        }
+        if (contains(ALT)) {
+            parts.add(keyModifiersAltDisplayName())
+        }
+        if (contains(SUPER)) {
+            parts.add(keyModifiersSuperDisplayName())
+        }
+        if (contains(HYPER)) {
+            parts.add("Hyper")
+        }
+        if (contains(META)) {
+            parts.add("Meta")
+        }
+        return parts.joinToString("+")
+    }
 }
 
 /**
@@ -477,7 +666,24 @@ enum class MediaKeyCode {
     Record,
     LowerVolume,
     RaiseVolume,
-    MuteVolume
+    MuteVolume;
+
+    override fun toString(): String =
+        when (this) {
+            Play -> "Play"
+            Pause -> "Pause"
+            PlayPause -> "Play/Pause"
+            Reverse -> "Reverse"
+            Stop -> "Stop"
+            FastForward -> "Fast Forward"
+            Rewind -> "Rewind"
+            TrackNext -> "Next Track"
+            TrackPrevious -> "Previous Track"
+            Record -> "Record"
+            LowerVolume -> "Lower Volume"
+            RaiseVolume -> "Raise Volume"
+            MuteVolume -> "Mute Volume"
+        }
 }
 
 /**
@@ -497,7 +703,25 @@ enum class ModifierKeyCode {
     RightHyper,
     RightMeta,
     IsoLevel3Shift,
-    IsoLevel5Shift
+    IsoLevel5Shift;
+
+    override fun toString(): String =
+        when (this) {
+            LeftShift -> "Left Shift"
+            LeftHyper -> "Left Hyper"
+            LeftMeta -> "Left Meta"
+            RightShift -> "Right Shift"
+            RightHyper -> "Right Hyper"
+            RightMeta -> "Right Meta"
+            IsoLevel3Shift -> "Iso Level 3 Shift"
+            IsoLevel5Shift -> "Iso Level 5 Shift"
+            LeftControl -> modifierKeyCodeLeftControlDisplayName()
+            LeftAlt -> modifierKeyCodeLeftAltDisplayName()
+            LeftSuper -> modifierKeyCodeLeftSuperDisplayName()
+            RightControl -> modifierKeyCodeRightControlDisplayName()
+            RightAlt -> modifierKeyCodeRightAltDisplayName()
+            RightSuper -> modifierKeyCodeRightSuperDisplayName()
+        }
 }
 
 /**

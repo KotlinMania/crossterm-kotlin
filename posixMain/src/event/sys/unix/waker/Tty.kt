@@ -1,6 +1,7 @@
 // port-lint: source event/sys/unix/waker/tty.rs
 package io.github.kotlinmania.crossterm.event.sys.unix.waker
 
+import io.github.kotlinmania.crossterm.event.sys.Waker
 import kotlinx.atomicfu.locks.ReentrantLock
 import kotlinx.atomicfu.locks.withLock
 import kotlinx.cinterop.ExperimentalForeignApi
@@ -28,7 +29,7 @@ import platform.posix.write
 @OptIn(ExperimentalForeignApi::class)
 class TtyWaker private constructor(
     private val writerFd: Int
-) {
+) : Waker {
 
     /**
      * Lock protecting the writer file descriptor.
@@ -65,7 +66,7 @@ class TtyWaker private constructor(
      *
      * @throws IllegalStateException if writing to the stream fails.
      */
-    fun wake() {
+    override fun wake() {
         lock.withLock {
             val buffer = byteArrayOf(0)
             buffer.usePinned { pinned ->

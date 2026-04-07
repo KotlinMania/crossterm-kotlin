@@ -103,15 +103,10 @@ class WinApiPoll private constructor(
 private const val INFINITE: UInt = 0xFFFFFFFFu
 
 /**
- * Windows handle type.
- */
-typealias WindowsHandle = HANDLE?
-
-/**
  * Gets the current console input handle.
  */
 @OptIn(ExperimentalForeignApi::class)
-private fun getCurrentInputHandle(): WindowsHandle {
+private fun getCurrentInputHandle(): HANDLE? {
     val handle = GetStdHandle(STD_INPUT_HANDLE)
     if (handle == INVALID_HANDLE_VALUE) {
         throw IllegalStateException("Failed to get standard input handle")
@@ -123,7 +118,7 @@ private fun getCurrentInputHandle(): WindowsHandle {
  * Waits for multiple objects.
  */
 @OptIn(ExperimentalForeignApi::class)
-private fun waitForMultipleObjects(handles: List<WindowsHandle>, timeout: UInt): UInt {
+private fun waitForMultipleObjects(handles: List<HANDLE?>, timeout: UInt): UInt {
     memScoped {
         val handleArray = allocArray<HANDLEVar>(handles.size)
         handles.forEachIndexed { idx, handle ->

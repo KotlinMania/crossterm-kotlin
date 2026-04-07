@@ -2,104 +2,150 @@
 package io.github.kotlinmania.crossterm.terminal
 
 import io.github.kotlinmania.crossterm.Command
+import io.github.kotlinmania.crossterm.csi
 
 /**
- * A command that switches to the alternate screen buffer.
+ * Tells whether the raw mode is enabled.
+ */
+fun isRawModeEnabled(): Boolean = io.github.kotlinmania.crossterm.terminal.sys.isRawModeEnabled()
+
+/**
+ * Enables raw mode.
+ */
+fun enableRawMode() = io.github.kotlinmania.crossterm.terminal.sys.enableRawMode()
+
+/**
+ * Disables raw mode.
+ */
+fun disableRawMode() = io.github.kotlinmania.crossterm.terminal.sys.disableRawMode()
+
+/**
+ * Returns the terminal size `(columns, rows)`.
  *
- * Use [LeaveAlternateScreen] to return to the main screen buffer.
- *
- * Note: The alternate screen buffer doesn't support scrollback.
+ * The top left cell is represented `(1, 1)`.
+ */
+fun size(): Pair<UShort, UShort> = io.github.kotlinmania.crossterm.terminal.sys.size()
+
+data class WindowSize(
+    val rows: UShort,
+    val columns: UShort,
+    val width: UShort,
+    val height: UShort
+)
+
+/**
+ * Returns the terminal size [WindowSize].
+ */
+fun windowSize(): WindowSize = io.github.kotlinmania.crossterm.terminal.sys.windowSize()
+
+/**
+ * Queries the terminal's support for progressive keyboard enhancement.
+ */
+fun supportsKeyboardEnhancement(): Boolean =
+    io.github.kotlinmania.crossterm.terminal.sys.supportsKeyboardEnhancement()
+
+/**
+ * Disables line wrapping.
+ */
+data object DisableLineWrap : Command {
+    override fun writeAnsi(writer: Appendable) {
+        writer.append(csi("?7l"))
+    }
+}
+
+/**
+ * Enable line wrapping.
+ */
+data object EnableLineWrap : Command {
+    override fun writeAnsi(writer: Appendable) {
+        writer.append(csi("?7h"))
+    }
+}
+
+/**
+ * A command that switches to alternate screen.
  */
 data object EnterAlternateScreen : Command {
     override fun writeAnsi(writer: Appendable) {
-        writer.append("\u001B[?1049h")
+        writer.append(csi("?1049h"))
     }
 }
 
 /**
- * A command that switches back to the main screen buffer.
+ * A command that switches back to the main screen.
  */
 data object LeaveAlternateScreen : Command {
     override fun writeAnsi(writer: Appendable) {
-        writer.append("\u001B[?1049l")
+        writer.append(csi("?1049l"))
     }
 }
 
 /**
- * A command that enables raw mode.
- *
- * Raw mode disables:
- * - Input line buffering
- * - Echo of input characters
- * - Special character processing (Ctrl-C, etc.)
- *
- * This is typically used for TUI applications.
- */
-data object EnableRawMode : Command {
-    override fun writeAnsi(writer: Appendable) {
-        // Raw mode is typically enabled via termios, not ANSI sequences
-        // This is a placeholder - actual implementation is platform-specific
-    }
-}
-
-/**
- * A command that disables raw mode.
- */
-data object DisableRawMode : Command {
-    override fun writeAnsi(writer: Appendable) {
-        // Placeholder - actual implementation is platform-specific
-    }
-}
-
-/**
- * Different ways to clear the terminal.
+ * Different ways to clear the terminal buffer.
  */
 enum class ClearType {
-    /** Clear the entire screen */
+    /** All cells. */
     All,
-    /** Clear everything after the cursor */
+    /** All plus history. */
     Purge,
-    /** Clear from cursor to end of screen */
+    /** All cells from the cursor position downwards. */
     FromCursorDown,
-    /** Clear from cursor to beginning of screen */
+    /** All cells from the cursor position upwards. */
     FromCursorUp,
-    /** Clear the current line */
+    /** All cells at the cursor row. */
     CurrentLine,
-    /** Clear from cursor to end of line */
-    UntilNewLine
+    /** All cells from the cursor position until the new line. */
+    UntilNewLine,
 }
 
 /**
- * A command that clears the terminal screen.
+ * A command that scrolls the terminal screen a given number of rows up.
  */
-data class Clear(val clearType: ClearType) : Command {
+data class ScrollUp(val rows: UShort) : Command {
     override fun writeAnsi(writer: Appendable) {
-        when (clearType) {
-            ClearType.All -> writer.append("\u001B[2J")
-            ClearType.Purge -> writer.append("\u001B[3J")
-            ClearType.FromCursorDown -> writer.append("\u001B[J")
-            ClearType.FromCursorUp -> writer.append("\u001B[1J")
-            ClearType.CurrentLine -> writer.append("\u001B[2K")
-            ClearType.UntilNewLine -> writer.append("\u001B[K")
+        if (rows != 0.toUShort()) {
+            writer.append(csi("${rows}S"))
         }
     }
 }
 
 /**
- * A command that scrolls the terminal up by the specified number of rows.
+ * A command that scrolls the terminal screen a given number of rows down.
  */
-data class ScrollUp(val rows: UShort) : Command {
+data class ScrollDown(val rows: UShort) : Command {
     override fun writeAnsi(writer: Appendable) {
-        writer.append("\u001B[${rows}S")
+        if (rows != 0.toUShort()) {
+            writer.append(csi("${rows}T"))
+        }
     }
 }
 
 /**
- * A command that scrolls the terminal down by the specified number of rows.
+ * A command that clears the terminal screen buffer.
+ *
+ * See the [ClearType] enum.
  */
-data class ScrollDown(val rows: UShort) : Command {
+data class Clear(val clearType: ClearType) : Command {
     override fun writeAnsi(writer: Appendable) {
-        writer.append("\u001B[${rows}T")
+        writer.append(
+            when (clearType) {
+                ClearType.All -> csi("2J")
+                ClearType.Purge -> csi("3J")
+                ClearType.FromCursorDown -> csi("J")
+                ClearType.FromCursorUp -> csi("1J")
+                ClearType.CurrentLine -> csi("2K")
+                ClearType.UntilNewLine -> csi("K")
+            }
+        )
+    }
+}
+
+/**
+ * A command that sets the terminal buffer size `(columns, rows)`.
+ */
+data class SetSize(val columns: UShort, val rows: UShort) : Command {
+    override fun writeAnsi(writer: Appendable) {
+        writer.append(csi("8;${rows};${columns}t"))
     }
 }
 
@@ -108,62 +154,27 @@ data class ScrollDown(val rows: UShort) : Command {
  */
 data class SetTitle(val title: String) : Command {
     override fun writeAnsi(writer: Appendable) {
-        writer.append("\u001B]0;$title\u0007")
+        writer.append("\u001B]0;")
+        writer.append(title)
+        writer.append("\u0007")
     }
 }
 
 /**
- * A command that enables line wrapping.
- */
-data object EnableLineWrap : Command {
-    override fun writeAnsi(writer: Appendable) {
-        writer.append("\u001B[?7h")
-    }
-}
-
-/**
- * A command that disables line wrapping.
- */
-data object DisableLineWrap : Command {
-    override fun writeAnsi(writer: Appendable) {
-        writer.append("\u001B[?7l")
-    }
-}
-
-/**
- * A command that begins a synchronized update.
- *
- * When the synchronization mode is enabled, following render calls will keep
- * rendering the last rendered state. The terminal emulator keeps processing
- * incoming text and sequences. When the synchronized update mode is disabled
- * again the renderer may fetch the latest screen buffer state again,
- * effectively avoiding the tearing effect.
- *
- * Use [EndSynchronizedUpdate] to end the synchronized update.
- *
- * Ported from Rust crossterm/src/terminal.rs BeginSynchronizedUpdate.
+ * A command that instructs the terminal emulator to begin a synchronized frame.
  */
 data object BeginSynchronizedUpdate : Command {
     override fun writeAnsi(writer: Appendable) {
-        writer.append("\u001B[?2026h")
+        writer.append(csi("?2026h"))
     }
 }
 
 /**
- * A command that ends a synchronized update.
- *
- * Ported from Rust crossterm/src/terminal.rs EndSynchronizedUpdate.
+ * A command that instructs the terminal emulator to end a synchronized frame.
  */
 data object EndSynchronizedUpdate : Command {
     override fun writeAnsi(writer: Appendable) {
-        writer.append("\u001B[?2026l")
+        writer.append(csi("?2026l"))
     }
 }
 
-/**
- * Terminal size in columns and rows.
- */
-data class TerminalSize(
-    val columns: UShort,
-    val rows: UShort
-)

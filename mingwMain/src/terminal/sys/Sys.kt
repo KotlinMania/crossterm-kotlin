@@ -1,6 +1,7 @@
 // port-lint: source terminal/sys/windows.rs
 package io.github.kotlinmania.crossterm.terminal.sys
 
+import io.github.kotlinmania.crossterm.terminal.WindowSize
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.alloc
 import kotlinx.cinterop.memScoped

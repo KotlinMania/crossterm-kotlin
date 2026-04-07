@@ -50,7 +50,7 @@ import io.github.kotlinmania.crossterm.event.KeyEvent
 // In Kotlin, we default to the Mio-based implementation which is more portable.
 //
 // When the unix.mio and unix.tty modules are fully implemented, this would be:
-// typealias UnixInternalEventSource = io.github.kotlinmania.crossterm.event.source.unix.MioUnixInternalEventSource
+
 //
 // For now, we provide shared utilities used by both implementations.
 
