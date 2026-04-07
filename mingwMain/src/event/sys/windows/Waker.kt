@@ -6,6 +6,7 @@ import kotlinx.atomicfu.locks.ReentrantLock
 import kotlinx.atomicfu.locks.withLock
 import kotlinx.cinterop.ExperimentalForeignApi
 import platform.windows.CreateSemaphoreW
+import platform.windows.HANDLE
 import platform.windows.ReleaseSemaphore
 
 /**
@@ -76,7 +77,7 @@ class Waker private constructor(
     /**
      * Returns the semaphore handle for use with WaitForMultipleObjects.
      */
-    fun semaphoreHandle(): WindowsHandle {
+    fun semaphoreHandle(): HANDLE? {
         return lock.withLock {
             semaphore.handle()
         }
@@ -98,7 +99,7 @@ class Waker private constructor(
  * Backed by WinAPI CreateSemaphore/ReleaseSemaphore for waking poll loops.
  */
 class Semaphore private constructor(
-    private val handle: WindowsHandle
+    private val handle: HANDLE?
 ) {
     companion object {
         /**
@@ -129,7 +130,7 @@ class Semaphore private constructor(
     /**
      * Returns the underlying handle.
      */
-    fun handle(): WindowsHandle = handle
+    fun handle(): HANDLE? = handle
 
     /**
      * Creates a clone of this semaphore (shares the same handle).
