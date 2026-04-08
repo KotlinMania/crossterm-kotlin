@@ -122,7 +122,7 @@ private fun waitForMultipleObjects(handles: List<HANDLE?>, timeout: UInt): UInt 
     memScoped {
         val handleArray = allocArray<HANDLEVar>(handles.size)
         handles.forEachIndexed { idx, handle ->
-            handleArray[idx] = handle ?: error("Null handle passed to waitForMultipleObjects")
+            handleArray[idx] = handle ?: throw IllegalStateException("Null handle passed to waitForMultipleObjects")
         }
 
         return WaitForMultipleObjects(

@@ -134,7 +134,7 @@ fun poll(timeout: Duration): Boolean =
 fun read(): Event {
     return when (val internalEvent = io.github.kotlinmania.crossterm.event.read(EventFilter)) {
         is InternalEvent.Event -> internalEvent.event
-        else -> error("read(EventFilter) returned non-Event internal event: $internalEvent")
+        else -> throw IllegalStateException("read(EventFilter) returned non-Event internal event: $internalEvent")
     }
 }
 
@@ -159,7 +159,7 @@ fun tryRead(): Event? {
     return when (val internalEvent = io.github.kotlinmania.crossterm.event.tryRead(EventFilter)) {
         null -> null
         is InternalEvent.Event -> internalEvent.event
-        else -> error("tryRead(EventFilter) returned non-Event internal event: $internalEvent")
+        else -> throw IllegalStateException("tryRead(EventFilter) returned non-Event internal event: $internalEvent")
     }
 }
 
