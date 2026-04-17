@@ -151,10 +151,14 @@ actual fun size(): Pair<UShort, UShort> {
 /**
  * Returns the terminal window size including pixel dimensions.
  *
- * On Windows, pixel size information is not available through the
- * standard Windows Console API.
+ * On Windows, pixel size information is not available through the standard
+ * Windows Console API. This mirrors the Rust implementation in
+ * `terminal/sys/windows.rs::window_size()`, which returns
+ * `Err(io::ErrorKind::Unsupported, "Window pixel size not implemented for the Windows API.")`.
+ * Kotlin's equivalent of that error kind is `UnsupportedOperationException`;
+ * the message is preserved verbatim for parity.
  *
- * @throws UnsupportedOperationException Window pixel size is not supported on Windows
+ * @throws UnsupportedOperationException always — pixel size is not supported on Windows
  */
 actual fun windowSize(): WindowSize {
     throw UnsupportedOperationException(
