@@ -1699,6 +1699,39 @@ public:
     }
 
     /**
+     * Check if a Kotlin function node has a @Test annotation (kotlin.test or JUnit).
+     * Kotlin annotations appear as `modifiers` children or preceding `annotation` nodes.
+     */
+    bool has_kotlin_test_annotation(TSNode node, const std::string& source) const {
+        // Scan the function node itself for a `modifiers` child containing @Test.
+        uint32_t child_count = ts_node_child_count(node);
+        for (uint32_t i = 0; i < child_count; ++i) {
+            TSNode child = ts_node_child(node, i);
+            std::string t(ts_node_type(child));
+            if (t == "modifiers" || t == "annotation" ||
+                t == "user_type" /* legacy */) {
+                uint32_t start = ts_node_start_byte(child);
+                uint32_t end = ts_node_end_byte(child);
+                if (end > start && end <= source.length()) {
+                    std::string text = source.substr(start, end - start);
+                    // Match @Test as a whole token (not e.g. @TestConfig).
+                    size_t pos = 0;
+                    while ((pos = text.find("@Test", pos)) != std::string::npos) {
+                        char next = (pos + 5 < text.size()) ? text[pos + 5] : '\0';
+                        // Allow @Test, @Test(...), @Test\n, @Test followed by space.
+                        if (next == '\0' || next == '\n' || next == ' ' ||
+                            next == '\t' || next == '(' || next == '\r') {
+                            return true;
+                        }
+                        pos += 5;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
      * Check if a node is inside a #[cfg(test)] mod block.
      * Walks up the tree looking for mod_item ancestors with #[cfg(test)].
      */
@@ -1926,6 +1959,9 @@ public:
             if (lang == Language::RUST) {
                 info.is_test = has_test_attribute(node, source) ||
                                is_inside_cfg_test_mod(node, source);
+            } else if (lang == Language::KOTLIN) {
+                // Kotlin @Test annotation (kotlin.test or JUnit).
+                info.is_test = has_kotlin_test_annotation(node, source);
             }
 
             functions.push_back(info);

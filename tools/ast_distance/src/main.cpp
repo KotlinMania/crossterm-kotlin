@@ -1361,17 +1361,20 @@ void generate_reports(const Codebase& source, const Codebase& target,
         std::ofstream report("high_priority_ports.md");
         report << "# High Priority Ports - Action Plan\n\n";
         
-        report << "## Top 20 Files by Impact (Priority Score = Deps × (1 - Similarity))\n\n";
-        report << "| Rank | Source | Target | Similarity | Deps | Priority |\n";
-        report << "|------|--------|--------|------------|------|----------|\n";
-        
+        report << "## Top 20 Files by Impact\n\n";
+        report << "Priority = (missing functions + missing types) × (10 + log1p(deps) × 2)"
+                  " + log1p(deps) × (1 − similarity) × 5\n\n";
+        report << "| Rank | Source | Target | Similarity | Deps | SymDeficit | Priority |\n";
+        report << "|------|--------|--------|------------|------|-----------|----------|\n";
+
         int rank = 1;
         for (const auto& m : ranked) {
             if (rank <= 20) {
-                float priority = m.source_dependents * (1.0f - m.similarity);
+                float priority = m.priority_score();
                 report << "| " << rank++ << " | `" << m.source_qualified << "` | `"
                        << m.target_qualified << "` | " << std::fixed << std::setprecision(2)
                        << m.similarity << " | " << m.source_dependents << " | "
+                       << m.symbol_deficit() << " | "
                        << std::fixed << std::setprecision(1) << priority << " |\n";
             }
         }
@@ -1442,7 +1445,21 @@ void generate_reports(const Codebase& source, const Codebase& target,
                        << ((0.85f - m.similarity) * 100.0f) << "% improvement)\n";
                 report << "- **Dependencies:** " << m.source_dependents << "\n";
                 report << "- **Priority Score:** " << std::fixed << std::setprecision(1)
-                       << (m.source_dependents * (1.0f - m.similarity)) << "\n";
+                       << m.priority_score() << "\n";
+                if (m.symbol_deficit() > 0) {
+                    report << "- **Symbol Deficit:** " << m.symbol_deficit()
+                           << " (functions: " << m.function_deficit()
+                           << ", types: " << m.type_deficit() << ")\n";
+                }
+                if (m.source_test_function_count > 0) {
+                    int missing_tests = m.source_test_function_count
+                                      - m.matched_test_function_count;
+                    if (missing_tests > 0) {
+                        report << "- **Missing Tests:** " << missing_tests << " of "
+                               << m.source_test_function_count << " `#[test]` functions"
+                               << " have no Kotlin counterpart\n";
+                    }
+                }
                 if (m.todo_count > 0) report << "- **TODOs:** " << m.todo_count << "\n";
                 report << "- **Action:** ";
                 if (m.similarity < 0.60) report << "Deep review - likely missing major functionality\n";
@@ -1786,11 +1803,22 @@ void cmd_deep(const std::string& src_dir, const std::string& src_lang,
 
 		    int incomplete = 0;
 		    int func_gap_files = 0;
+		    int total_func_deficit = 0;
+		    int total_type_deficit = 0;
+		    int test_gap_files = 0;
+		    int total_test_deficit = 0;
 		    for (const auto& m : ranked) {
 	        if (m.similarity < 0.6) incomplete++;
-	        if (m.source_function_count > 0 &&
-	            m.matched_function_count < m.source_function_count) {
+	        if (m.function_deficit() > 0) {
 	            func_gap_files++;
+	            total_func_deficit += m.function_deficit();
+	        }
+	        total_type_deficit += m.type_deficit();
+	        int missing_tests = std::max(0,
+	            m.source_test_function_count - m.matched_test_function_count);
+	        if (missing_tests > 0) {
+	            test_gap_files++;
+	            total_test_deficit += missing_tests;
 	        }
 	    }
 
@@ -1812,7 +1840,12 @@ void cmd_deep(const std::string& src_dir, const std::string& src_lang,
 	    std::cout << "- Missing files: " << comp.unmatched_source.size() << "\n";
 	    std::cout << "- Incomplete ports (similarity < 60%): " << incomplete << "\n";
 	    std::cout << "- Stub files: " << stub_count << "\n";
-	    std::cout << "- Files missing functions: " << func_gap_files << "\n";
+	    std::cout << "- Files missing functions: " << func_gap_files
+	              << " (total deficit: " << total_func_deficit << " functions)\n";
+	    std::cout << "- Type definitions missing: " << total_type_deficit << "\n";
+	    std::cout << "- Files missing tests: " << test_gap_files
+	              << " (total deficit: " << total_test_deficit
+	              << " unported `#[test]` functions)\n";
 	    if (total_src_doc_lines > 0) {
 	        int pct = static_cast<int>(doc_coverage_pct + 0.5f);
 	        std::cout << "- Documentation coverage: " << total_tgt_doc_lines << " / "
@@ -1825,8 +1858,12 @@ void cmd_deep(const std::string& src_dir, const std::string& src_lang,
 		        std::cout << "create missing files (highest deps first)\n";
 		    } else if (stub_count > 0) {
 		        std::cout << "replace stub files with real implementations\n";
-		    } else if (func_gap_files > 0) {
-		        std::cout << "port missing functions to reach per-file parity\n";
+		    } else if (func_gap_files > 0 || test_gap_files > 0) {
+		        std::cout << "port missing functions/tests to reach per-file parity"
+		                  << " (" << total_func_deficit << " functions, "
+		                  << total_test_deficit << " tests)\n";
+		    } else if (total_type_deficit > 0) {
+		        std::cout << "port missing type definitions\n";
 		    } else if (incomplete > 0) {
 		        std::cout << "improve incomplete ports (similarity < 60%)\n";
 		    } else if (docs_missing) {
@@ -1841,16 +1878,20 @@ void cmd_deep(const std::string& src_dir, const std::string& src_lang,
 		              << std::setw(11) << "Similarity"
 		              << std::setw(11) << "LineRatio"
 		              << std::setw(14) << "FunctionParity"
+		              << std::setw(10) << "Tests"
 		              << std::setw(6) << "TODOs"
 		              << std::setw(6) << "Lint"
 		              << "Status\n";
-		    std::cout << std::string(90, '-') << "\n";
+		    std::cout << std::string(100, '-') << "\n";
 
 	    int shown = 0;
 	    for (const auto& m : ranked) {
-	        bool func_gap = (m.source_function_count > 0 &&
-	                         m.matched_function_count < m.source_function_count);
-	        if (m.todo_count == 0 && m.lint_count == 0 && !m.is_stub && !func_gap && m.similarity >= 0.6) {
+	        bool func_gap = (m.function_deficit() > 0);
+	        int missing_tests = std::max(0,
+	            m.source_test_function_count - m.matched_test_function_count);
+	        bool test_gap = (missing_tests > 0);
+	        if (m.todo_count == 0 && m.lint_count == 0 && !m.is_stub
+	            && !func_gap && !test_gap && m.similarity >= 0.6) {
 	            continue;  // Skip files without issues
 	        }
 	        if (shown++ >= 20) {
@@ -1862,6 +1903,7 @@ void cmd_deep(const std::string& src_dir, const std::string& src_lang,
 	        if (m.is_stub) status = "STUB";
 	        else if (m.similarity < 0.4) status = "LOW_SIM";
 	        else if (func_gap) status = "MISSING_FUNCS";
+	        else if (test_gap) status = "MISSING_TESTS";
 	        else if (m.lint_count > 0) status = "LINT";
 	        else if (m.todo_count > 0) status = "TODO";
 
@@ -1876,10 +1918,17 @@ void cmd_deep(const std::string& src_dir, const std::string& src_lang,
 	                    std::to_string(m.source_function_count);
 	        }
 
+	        std::string tests = "-";
+	        if (m.source_test_function_count > 0) {
+	            tests = std::to_string(m.matched_test_function_count) + "/" +
+	                    std::to_string(m.source_test_function_count);
+	        }
+
 		        std::cout << std::setw(30) << std::left << m.target_qualified.substr(0, 28)
 		                  << std::setw(11) << std::fixed << std::setprecision(2) << m.similarity
 		                  << std::setw(11) << std::fixed << std::setprecision(2) << ratio
 		                  << std::setw(14) << funcs
+		                  << std::setw(10) << tests
 		                  << std::setw(6) << m.todo_count
 		                  << std::setw(6) << m.lint_count
 		                  << status << "\n";
