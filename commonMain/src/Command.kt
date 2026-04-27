@@ -11,8 +11,6 @@ import io.github.kotlinmania.crossterm.terminal.EndSynchronizedUpdate
  * and there is no immediate reason to implement a command yourself.
  * In order to understand how to use and execute commands,
  * it is recommended that you take a look at the Command API chapter.
- *
- * Ported from Rust crossterm `src/command.rs` `Command` trait.
  */
 interface Command {
     /**
@@ -20,43 +18,89 @@ interface Command {
      * An ANSI code can manipulate the terminal by writing it to the terminal buffer.
      * However, only Windows 10 and UNIX systems support this.
      *
-     * This method does not need to be accessed manually, as it is used by the crossterm's Command API.
+     * This method does not need to be accessed manually, as it is used by the crossterm's
+     * Command API.
      */
     fun writeAnsi(writer: Appendable)
 
     /**
-     * Execute this command using WinAPI calls (Windows-only behavior).
+     * Execute this command.
      *
-     * Ported from Rust crossterm `src/command.rs` `Command::execute_winapi` (behind `#[cfg(windows)]`).
+     * Windows versions lower than windows 10 do not support ANSI escape codes,
+     * therefore a direct WinAPI call is made.
      *
-     * In this Kotlin port the default behavior is a no-op, because most commands are executed as ANSI
-     * strings. Platform-specific commands can override this where needed.
+     * This method does not need to be accessed manually, as it is used by the crossterm's
+     * Command API.
      */
     fun executeWinapi() {
         // no-op
     }
 
     /**
-     * Returns whether this command's ANSI representation is supported on Windows.
+     * Returns whether the ANSI code representation of this command is supported by windows.
      *
-     * Ported from Rust crossterm `src/command.rs` `Command::is_ansi_code_supported` (behind `#[cfg(windows)]`).
+     * A list of supported ANSI escape codes
+     * can be found in Microsoft's "Console Virtual Terminal Sequences" reference.
      */
     fun isAnsiCodeSupported(): Boolean = AnsiSupport.supportsAnsi()
 }
 
 /**
  * An interface for types that can queue commands for further execution.
- *
- * Ported from Rust crossterm `src/command.rs` `QueueableCommand` trait.
  */
 interface QueueableCommand : Appendable {
     /**
      * Queues the given command for further execution.
      *
-     * Queued commands will be executed when [flush] is called.
+     * Queued commands will be executed in the following cases:
+     *
+     * * When `flush` is called manually on the given type implementing the writer interface.
+     * * The terminal will `flush` automatically if the buffer is full.
+     * * Each line is flushed in case of `stdout`, because it is line buffered.
+     *
+     * # Arguments
+     *
+     * - [Command]
+     *
+     *   The command that you want to queue for later execution.
+     *
+     * # Examples
+     *
+     * ```kotlin
+     * val stdout = System.out
+     *
+     * // `Print` will be executed when `flush` is called.
+     * stdout
+     *     .queue(Print("foo 1\n"))
+     *     .queue(Print("foo 2"))
+     *
+     * // some other code (no execution happening here) ...
+     *
+     * // when calling `flush` on `stdout`, all commands will be written to the stdout
+     * // and therefore executed.
+     * stdout.flush()
+     *
+     * // ==== Output ====
+     * // foo 1
+     * // foo 2
+     * ```
+     *
+     * Have a look over at the Command API for more details.
+     *
+     * # Notes
+     *
+     * * In the case of UNIX and Windows 10, ANSI codes are written to the given 'writer'.
+     * * In case of Windows versions lower than 10, a direct WinAPI call will be made.
+     *   The reason for this is that Windows versions lower than 10 do not support ANSI codes,
+     *   and can therefore not be written to the given `writer`.
+     *   Therefore, there is no difference between [ExecutableCommand.execute] and
+     *   [QueueableCommand.queue] for those old Windows versions.
      */
     fun queue(command: Command): QueueableCommand {
         if (!command.isAnsiCodeSupported()) {
+            // There may be queued commands in this writer, but `executeWinapi` will execute the
+            // command immediately. To prevent commands being executed out of order we flush the
+            // writer now.
             flush()
             command.executeWinapi()
             return this
@@ -74,14 +118,42 @@ interface QueueableCommand : Appendable {
 
 /**
  * An interface for types that can directly execute commands.
- *
- * Ported from Rust crossterm `src/command.rs` `ExecutableCommand` trait.
  */
 interface ExecutableCommand : QueueableCommand {
     /**
      * Executes the given command directly.
      *
-     * The given command's ANSI escape code will be written and flushed.
+     * The given command's ANSI escape code will be written and flushed onto `Self`.
+     *
+     * # Arguments
+     *
+     * - [Command]
+     *
+     *   The command that you want to execute directly.
+     *
+     * # Example
+     *
+     * ```kotlin
+     * // will be executed directly
+     * System.out
+     *     .execute(Print("sum:\n"))
+     *     .execute(Print("1 + 1= ${1 + 1} "))
+     *
+     * // ==== Output ====
+     * // sum:
+     * // 1 + 1 = 2
+     * ```
+     *
+     * Have a look over at the Command API for more details.
+     *
+     * # Notes
+     *
+     * * In the case of UNIX and Windows 10, ANSI codes are written to the given 'writer'.
+     * * In case of Windows versions lower than 10, a direct WinAPI call will be made.
+     *   The reason for this is that Windows versions lower than 10 do not support ANSI codes,
+     *   and can therefore not be written to the given `writer`.
+     *   Therefore, there is no difference between [ExecutableCommand.execute] and
+     *   [QueueableCommand.queue] for those old Windows versions.
      */
     fun execute(command: Command): ExecutableCommand {
         queue(command)
@@ -92,8 +164,6 @@ interface ExecutableCommand : QueueableCommand {
 
 /**
  * An interface for types that support synchronized updates.
- *
- * Ported from Rust crossterm `src/command.rs` `SynchronizedUpdate` trait.
  */
 interface SynchronizedUpdate : ExecutableCommand {
     /**
@@ -102,11 +172,43 @@ interface SynchronizedUpdate : ExecutableCommand {
      * Updates will be suspended in the terminal, the function will be executed against self,
      * updates will be resumed, and a flush will be performed.
      *
+     * # Arguments
+     *
+     * - Function
+     *
+     *     A function that performs the operations that must execute in a synchronized update.
+     *
+     * # Examples
+     *
+     * ```kotlin
+     * val stdout = System.out
+     *
+     * stdout.syncUpdate { stdout ->
+     *     stdout.execute(Print("foo 1\n"))
+     *     stdout.execute(Print("foo 2"))
+     *     // The effects of the print command will be present in the terminal
+     *     // buffer, but not visible in the terminal.
+     * }
+     *
+     * // The effects of the commands will be visible.
+     * ```
+     *
+     * # Notes
+     *
+     * This command is performed only using ANSI codes, and will do nothing on terminals that
+     * do not support ANSI codes, or this specific extension.
+     *
      * When rendering the screen of the terminal, the Emulator usually iterates through each
      * visible grid cell and renders its current state. With applications updating the screen
      * at a higher frequency this can cause tearing.
      *
      * This mode attempts to mitigate that.
+     *
+     * When the synchronization mode is enabled following render calls will keep rendering the
+     * last rendered state. The terminal Emulator keeps processing incoming text and sequences.
+     * When the synchronized update mode is disabled again the renderer may fetch the latest
+     * screen buffer state again, effectively avoiding the tearing effect by unintentionally
+     * rendering in the middle of an application screen update.
      */
     fun <T> syncUpdate(operations: (SynchronizedUpdate) -> T): T {
         queue(BeginSynchronizedUpdate)
@@ -118,8 +220,6 @@ interface SynchronizedUpdate : ExecutableCommand {
 
 /**
  * Writes the ANSI representation of a command to the given writer.
- *
- * Ported from Rust crossterm `src/command.rs` `write_command_ansi`.
  */
 fun writeCommandAnsi(writer: Appendable, command: Command) {
     command.writeAnsi(writer)
@@ -127,10 +227,8 @@ fun writeCommandAnsi(writer: Appendable, command: Command) {
 
 /**
  * Executes the ANSI representation of a command, using the given [Appendable].
- *
- * Ported from Rust crossterm `src/command.rs` `execute_fmt`.
  */
-fun executeFmt(f: Appendable, command: Command) {
+internal fun executeFmt(f: Appendable, command: Command) {
     if (!command.isAnsiCodeSupported()) {
         command.executeWinapi()
         return

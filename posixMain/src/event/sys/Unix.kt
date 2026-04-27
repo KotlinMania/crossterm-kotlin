@@ -60,8 +60,4 @@ package io.github.kotlinmania.crossterm.event.sys
 // - io.github.kotlinmania.crossterm.event.sys.unix.parse (event parsing)
 //
 // Rust source:
-// #[cfg(feature = "event-stream")]
-// pub(crate) mod waker;
 //
-// #[cfg(feature = "events")]
-// pub(crate) mod parse;

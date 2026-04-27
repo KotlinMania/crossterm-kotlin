@@ -353,7 +353,6 @@ sealed class Event {
     }
 }
 
-// Platform-specific display strings in Rust are selected via `#[cfg(...)]` inside `impl Display`.
 // Kotlin Multiplatform uses `expect`/`actual` as the closest analogue of Rust cfg blocks.
 internal expect fun keyCodeBackspaceDisplayName(): String
 internal expect fun keyCodeDeleteDisplayName(): String

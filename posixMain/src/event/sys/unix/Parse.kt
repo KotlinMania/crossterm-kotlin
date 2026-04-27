@@ -107,7 +107,6 @@ fun parseEvent(buffer: ByteArray, inputAvailable: Boolean): ParseResult {
         // Issue #371: \n = 0xA, which is also the keycode for Ctrl+J. The only reason we get
         // newlines as input is because the terminal converts \r into \n for us. When we
         // enter raw mode, we disable that, so \n no longer has any meaning - it's better to
-        // use Ctrl+J. Waiting to handle it here means it gets picked up later
         '\n'.code.toByte() -> {
             if (!isRawModeEnabled()) {
                 ParseResult.Success(InternalEvent.Event(Event.Key(KeyCode.Enter.toKeyEvent())))
@@ -369,7 +368,6 @@ private fun parseCsiKeyboardEnhancementFlags(buffer: ByteArray): ParseResult {
     // Note: REPORT_ASSOCIATED_TEXT is not yet supported by crossterm.
     // if (bits and 16 != 0) {
     //     flags = flags + KeyboardEnhancementFlags.REPORT_ASSOCIATED_TEXT
-    // }
 
     return ParseResult.Success(InternalEvent.KeyboardEnhancementFlags(flags))
 }
