@@ -89,22 +89,22 @@ class Console private constructor(private val handle: Handle) {
 
             return when (record.EventType.toInt()) {
                 KEY_EVENT -> {
-                    val key = record.Event.KeyEvent!!
+                    val key = record.Event.KeyEvent
                     val keyRecord = KeyEventRecord(
                         keyDown = key.bKeyDown != 0,
-                        virtualKeyCode = key.wVirtualKeyCode.toUShort(),
-                        virtualScanCode = key.wVirtualScanCode.toUShort(),
-                        uChar = key.uChar.UnicodeChar.toUShort(),
-                        controlKeyState = ControlKeyState(key.dwControlKeyState.toUInt())
+                        virtualKeyCode = key.wVirtualKeyCode,
+                        virtualScanCode = key.wVirtualScanCode,
+                        uChar = key.uChar.UnicodeChar,
+                        controlKeyState = ControlKeyState(key.dwControlKeyState)
                     )
                     InputRecord.KeyEvent(keyRecord)
                 }
                 MOUSE_EVENT -> {
-                    val mouse = record.Event.MouseEvent!!
+                    val mouse = record.Event.MouseEvent
                     val mouseRecord = MouseEventRecord(
                         mousePosition = Coord(mouse.dwMousePosition.X, mouse.dwMousePosition.Y),
-                        buttonState = ButtonState(mouse.dwButtonState.toUInt()),
-                        controlKeyState = ControlKeyState(mouse.dwControlKeyState.toUInt()),
+                        buttonState = ButtonState(mouse.dwButtonState),
+                        controlKeyState = ControlKeyState(mouse.dwControlKeyState),
                         eventFlags = when (mouse.dwEventFlags.toInt()) {
                             0 -> EventFlags.PressOrRelease
                             0x0002 -> EventFlags.MouseMoved
@@ -117,13 +117,13 @@ class Console private constructor(private val handle: Handle) {
                     InputRecord.MouseEvent(mouseRecord)
                 }
                 WINDOW_BUFFER_SIZE_EVENT -> {
-                    val size = record.Event.WindowBufferSizeEvent!!
+                    val size = record.Event.WindowBufferSizeEvent
                     InputRecord.WindowBufferSizeEvent(
                         WindowBufferSizeRecord(Coord(size.dwSize.X, size.dwSize.Y))
                     )
                 }
                 FOCUS_EVENT -> {
-                    val focus = record.Event.FocusEvent!!
+                    val focus = record.Event.FocusEvent
                     InputRecord.FocusEvent(FocusEventRecord(focus.bSetFocus != 0))
                 }
                 MENU_EVENT -> InputRecord.MenuEvent

@@ -71,20 +71,20 @@ class WinApiPoll private constructor(
         val output = waitForMultipleObjects(handles, dwMillis)
 
         return when {
-            output == WAIT_OBJECT_0.toUInt() -> {
+            output == WAIT_OBJECT_0 -> {
                 // Input handle triggered
                 true
             }
-            waker != null && output == WAIT_OBJECT_0.toUInt() + 1u -> {
+            waker != null && output == WAIT_OBJECT_0 + 1u -> {
                 // Semaphore handle triggered (waker)
                 waker.reset()
                 throw WakeInterruptException("Poll operation was woken up by Waker.wake")
             }
-            output == WAIT_TIMEOUT.toUInt() || output == WAIT_ABANDONED_0.toUInt() -> {
+            output == WAIT_TIMEOUT.toUInt() || output == WAIT_ABANDONED_0 -> {
                 // Timeout elapsed
                 null
             }
-            output == WAIT_FAILED.toUInt() -> {
+            output == WAIT_FAILED -> {
                 throw IllegalStateException("WaitForMultipleObjects failed")
             }
             else -> {

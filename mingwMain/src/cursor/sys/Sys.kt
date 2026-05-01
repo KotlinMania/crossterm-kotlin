@@ -39,7 +39,7 @@ private val savedPosition: AtomicReference<Pair<UShort, UShort>?> = AtomicRefere
 @OptIn(ExperimentalForeignApi::class)
 actual fun position(): Pair<UShort, UShort> {
     memScoped {
-        val handle = GetStdHandle(STD_OUTPUT_HANDLE.toUInt())
+        val handle = GetStdHandle(STD_OUTPUT_HANDLE)
         if (handle == INVALID_HANDLE_VALUE) {
             throw IllegalStateException("Failed to get standard output handle")
         }
@@ -68,7 +68,7 @@ actual fun position(): Pair<UShort, UShort> {
 @OptIn(ExperimentalForeignApi::class)
 actual fun moveTo(column: UShort, row: UShort) {
     memScoped {
-        val handle = GetStdHandle(STD_OUTPUT_HANDLE.toUInt())
+        val handle = GetStdHandle(STD_OUTPUT_HANDLE)
         if (handle == INVALID_HANDLE_VALUE) {
             throw IllegalStateException("Failed to get standard output handle")
         }
@@ -212,7 +212,7 @@ actual fun restorePosition() {
 @OptIn(ExperimentalForeignApi::class)
 actual fun showCursor(visible: Boolean) {
     memScoped {
-        val handle = GetStdHandle(STD_OUTPUT_HANDLE.toUInt())
+        val handle = GetStdHandle(STD_OUTPUT_HANDLE)
         if (handle == INVALID_HANDLE_VALUE) {
             throw IllegalStateException("Failed to get standard output handle")
         }

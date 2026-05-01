@@ -28,7 +28,7 @@ import platform.posix.getenv
 @OptIn(ExperimentalForeignApi::class)
 internal actual fun detectAnsiSupport(): Boolean {
     // First, try to enable virtual terminal processing via Windows API
-    val handle = GetStdHandle(STD_OUTPUT_HANDLE.toUInt())
+    val handle = GetStdHandle(STD_OUTPUT_HANDLE)
     if (handle != INVALID_HANDLE_VALUE && handle != null) {
         memScoped {
             val mode = alloc<DWORDVar>()

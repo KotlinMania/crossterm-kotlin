@@ -209,7 +209,7 @@ private fun getCurrentConsoleAttributes(): UShort {
             throw IllegalStateException("Failed to get console screen buffer info")
         }
 
-        return csbi.wAttributes.toUShort()
+        return csbi.wAttributes
     }
 }
 

@@ -33,7 +33,7 @@ actual fun isatty(fd: Int): Boolean {
         else -> return false
     }
 
-    val handle = GetStdHandle(stdHandle.toUInt())
+    val handle = GetStdHandle(stdHandle)
     if (handle == INVALID_HANDLE_VALUE || handle == null) {
         return false
     }
