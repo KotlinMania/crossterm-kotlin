@@ -75,7 +75,7 @@ kotlin {
         val commonMain by getting {
             kotlin.srcDir("commonMain/src")
             dependencies {
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.1")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
                 implementation("org.jetbrains.kotlinx:atomicfu:0.27.0")
             }
         }
@@ -84,7 +84,7 @@ kotlin {
             kotlin.srcDir("commonTest/kotlin")
             dependencies {
                 implementation(kotlin("test"))
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.1")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
             }
         }
 
