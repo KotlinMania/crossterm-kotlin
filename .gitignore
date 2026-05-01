@@ -31,6 +31,9 @@ tasks_new.json
 tasks_new.json.lock
 
 # JS/WASM artifacts
-/kotlin-js-store/
+/kotlin-js-store/*
+!/kotlin-js-store/yarn.lock
+!/kotlin-js-store/wasm/
+!/kotlin-js-store/wasm/yarn.lock
 .DS_Store
 mingwMain/src/event/sys/windows/parse.kt.backup
