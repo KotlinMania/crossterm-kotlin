@@ -183,10 +183,14 @@ kotlin {
 }
 
 kotlin {
-    androidLibrary {
+    android {
         namespace = "io.github.kotlinmania.crossterm"
         compileSdk = 34
         minSdk = 24
+        withHostTestBuilder {}.configure {}
+        withDeviceTestBuilder {
+            sourceSetTreeName = "test"
+        }
     }
 }
 
