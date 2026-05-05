@@ -48,12 +48,6 @@ kotlin {
             xcf.add(this)
         }
     }
-    iosX64 {
-        binaries.framework {
-            baseName = "Crossterm"
-            xcf.add(this)
-        }
-    }
     iosSimulatorArm64 {
         binaries.framework {
             baseName = "Crossterm"
@@ -132,10 +126,6 @@ kotlin {
             kotlin.srcDir("posixMain/src")
             kotlin.srcDir("macosArm64Main/src")
         }
-        val macosX64Main by getting {
-            kotlin.srcDir("posixMain/src")
-            kotlin.srcDir("macosX64Main/src")
-        }
 
         val iosMain by getting {
             dependsOn(otherMain)
@@ -147,10 +137,6 @@ kotlin {
         val iosArm64Main by getting {
             kotlin.srcDir("posixMain/src")
             kotlin.srcDir("iosArm64Main/src")
-        }
-        val iosX64Main by getting {
-            kotlin.srcDir("posixMain/src")
-            kotlin.srcDir("iosX64Main/src")
         }
         val iosSimulatorArm64Main by getting {
             kotlin.srcDir("posixMain/src")
@@ -212,7 +198,7 @@ val enableIosSimulatorTests =
     providers.gradleProperty("enableIosSimulatorTests").map { it.toBoolean() }.orElse(false)
 
 tasks.withType<KotlinNativeTest>().configureEach {
-    if (!enableIosSimulatorTests.get() && (name == "iosX64Test" || name == "iosSimulatorArm64Test")) {
+    if (!enableIosSimulatorTests.get() && name == "iosSimulatorArm64Test") {
         enabled = false
     }
 }
