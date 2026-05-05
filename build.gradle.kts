@@ -1,5 +1,6 @@
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.plugin.mpp.apple.XCFramework
+import org.jetbrains.kotlin.gradle.targets.js.yarn.YarnRootExtension
 import org.jetbrains.kotlin.gradle.targets.native.tasks.KotlinNativeTest
 
 plugins {
@@ -67,6 +68,11 @@ kotlin {
     wasmJs {
         browser()
         nodejs()
+    }
+
+    swiftExport {
+        moduleName = "Crossterm"
+        flattenPackage = "io.github.kotlinmania.crossterm"
     }
 
     sourceSets {
@@ -173,6 +179,12 @@ kotlin {
     }
 
     jvmToolchain(21)
+}
+
+rootProject.extensions.configure<YarnRootExtension>("kotlinYarn") {
+    resolution("diff", "8.0.3")
+    resolution("serialize-javascript", "7.0.5")
+    resolution("webpack", "5.106.2")
 }
 
 kotlin {
