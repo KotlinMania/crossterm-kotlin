@@ -1,15 +1,15 @@
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.plugin.mpp.apple.XCFramework
+import org.jetbrains.kotlin.gradle.targets.js.yarn.YarnRootExtension
 import org.jetbrains.kotlin.gradle.targets.js.nodejs.NodeJsEnvSpec
-import org.jetbrains.kotlin.gradle.targets.wasm.nodejs.WasmNodeJsEnvSpec
 import org.jetbrains.kotlin.gradle.targets.js.nodejs.NodeJsRootExtension
 import org.jetbrains.kotlin.gradle.targets.js.yarn.YarnRootEnvSpec
+import org.jetbrains.kotlin.gradle.targets.wasm.nodejs.WasmNodeJsEnvSpec
 import org.jetbrains.kotlin.gradle.targets.wasm.yarn.WasmYarnRootEnvSpec
-import org.jetbrains.kotlin.gradle.targets.js.yarn.YarnRootExtension
-import org.jetbrains.kotlin.gradle.targets.native.tasks.KotlinNativeTest
 
 plugins {
     kotlin("multiplatform") version "2.3.21"
+    kotlin("plugin.serialization") version "2.3.21"
     id("com.android.kotlin.multiplatform.library") version "9.2.0"
     id("com.vanniktech.maven.publish") version "0.36.0"
 }
@@ -31,6 +31,11 @@ if (androidSdkDir != null && file(androidSdkDir).exists()) {
 
 kotlin {
     applyDefaultHierarchyTemplate()
+
+    sourceSets.all {
+        languageSettings.optIn("kotlin.time.ExperimentalTime")
+        languageSettings.optIn("kotlin.concurrent.atomics.ExperimentalAtomicApi")
+    }
 
     compilerOptions {
         allWarningsAsErrors.set(true)
@@ -72,6 +77,16 @@ kotlin {
     swiftExport {
         moduleName = "Crossterm"
         flattenPackage = "io.github.kotlinmania.crossterm"
+    }
+
+    android {
+        namespace = "io.github.kotlinmania.crossterm"
+        compileSdk = 34
+        minSdk = 24
+        withHostTestBuilder {}.configure {}
+        withDeviceTestBuilder {
+            sourceSetTreeName = "test"
+        }
     }
 
     sourceSets {
@@ -168,10 +183,8 @@ kotlin {
             kotlin.srcDir("androidMain/src")
         }
     }
-
     jvmToolchain(21)
 }
-
 
 rootProject.extensions.configure<NodeJsEnvSpec>("kotlinNodeJsSpec") {
     version.set("22.22.2")
@@ -184,7 +197,6 @@ rootProject.extensions.configure<WasmNodeJsEnvSpec>("kotlinWasmNodeJsSpec") {
 rootProject.extensions.configure<YarnRootEnvSpec>("kotlinYarnSpec") {
     version.set("1.22.22")
 }
-
 
 rootProject.extensions.configure<WasmYarnRootEnvSpec>("kotlinWasmYarnSpec") {
     version.set("1.22.22")
@@ -217,6 +229,7 @@ rootProject.extensions.configure<YarnRootExtension>("kotlinYarn") {
     resolution("**/socket.io-parser", "4.2.6")
 }
 
+
 val patchedKarmaWebpackPackage = rootProject.layout.projectDirectory.dir("gradle/npm/karma-webpack").asFile.absolutePath.replace("\\", "/")
 
 rootProject.extensions.configure<NodeJsRootExtension>("kotlinNodeJs") {
@@ -228,27 +241,6 @@ rootProject.extensions.configure<NodeJsRootExtension>("kotlinNodeJs") {
     versions.kotlinWebHelpers.version = "3.1.0"
 }
 
-kotlin {
-    android {
-        namespace = "io.github.kotlinmania.crossterm"
-        compileSdk = 34
-        minSdk = 24
-        withHostTestBuilder {}.configure {}
-        withDeviceTestBuilder {
-            sourceSetTreeName = "test"
-        }
-    }
-}
-
-val enableIosSimulatorTests =
-    providers.gradleProperty("enableIosSimulatorTests").map { it.toBoolean() }.orElse(false)
-
-tasks.withType<KotlinNativeTest>().configureEach {
-    if (!enableIosSimulatorTests.get() && name == "iosSimulatorArm64Test") {
-        enabled = false
-    }
-}
-
 mavenPublishing {
     publishToMavenCentral()
     signAllPublications()
@@ -257,8 +249,8 @@ mavenPublishing {
 
     pom {
         name.set("crossterm-kotlin")
-        description.set("Kotlin Multiplatform terminal manipulation library - port of Rust crossterm")
-        inceptionYear.set("2025")
+        description.set("Kotlin Multiplatform port of crossterm-rs/crossterm - A crossplatform terminal library for manipulating terminals")
+        inceptionYear.set("2026")
         url.set("https://github.com/KotlinMania/crossterm-kotlin")
 
         licenses {
@@ -286,20 +278,16 @@ mavenPublishing {
     }
 }
 
-// CodeQL's Gradle autobuild invokes `./gradlew testClasses`, which is a
-// JVM-convention task that Kotlin Multiplatform projects without a JVM
-// target do not provide. Without it, CodeQL aborts with
-// `Task 'testClasses' not found in root project` and skips the scan.
-// Register an aggregate task that depends on every per-target
-// test-compile task (jsTestClasses, wasmJsTestClasses, and the
-// compileTestKotlin<Target> tasks for native targets) so the convention
-// call resolves.
-tasks.register("testClasses") {
-    description = "Aggregate test-compile task for CodeQL and other JVM-convention callers."
+tasks.register("test") {
     group = "verification"
-    dependsOn(tasks.matching { other ->
-        val n = other.name
-        n != "testClasses" &&
-            (n.endsWith("TestClasses") || n.startsWith("compileTestKotlin"))
-    })
+    description =
+        "Runs a portable test suite (macOS + JS + WasmJS). Android and non-host native targets are intentionally excluded."
+
+    val defaultTestTasks = listOf(
+        "macosArm64Test",
+        "jsNodeTest",
+        "wasmJsNodeTest",
+    )
+
+    dependsOn(defaultTestTasks.mapNotNull { taskName -> tasks.findByName(taskName) })
 }
