@@ -23,6 +23,13 @@ class InternalEventReader(
     private val events: ArrayDeque<InternalEvent> = ArrayDeque(32)
     private val skippedEvents: MutableList<InternalEvent> = ArrayList(32)
 
+    internal constructor(
+        source: EventSource?,
+        initialEvents: List<InternalEvent>
+    ) : this(source) {
+        events.addAll(initialEvents)
+    }
+
     companion object {
         /**
          * Creates a default [InternalEventReader] without an event source.
