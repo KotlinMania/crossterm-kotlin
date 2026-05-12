@@ -1,6 +1,6 @@
 # port-lint Proposed Changes
 
-**Generated:** 2026-04-29
+**Generated:** 2026-05-07
 **Source:** crossterm/src
 **Target:** src/commonMain/kotlin/io/github/kotlinmania/crossterm
 

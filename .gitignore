@@ -35,5 +35,9 @@ tasks_new.json.lock
 !/kotlin-js-store/yarn.lock
 !/kotlin-js-store/wasm/
 !/kotlin-js-store/wasm/yarn.lock
+
+# TypeScript tool dependencies
+/tools/ast_distance/typescript/node_modules/
+/tools/ast_distance/typescript/dist/
 .DS_Store
 mingwMain/src/event/sys/windows/parse.kt.backup

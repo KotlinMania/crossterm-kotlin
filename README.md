@@ -1,257 +1,286 @@
-<div align="center">
+# crossterm-kotlin in Kotlin
 
-# Crossterm-Kotlin
+[![GitHub link](https://img.shields.io/badge/GitHub-KotlinMania%2Fcrossterm--kotlin-blue.svg)](https://github.com/KotlinMania/crossterm-kotlin)
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.kotlinmania/crossterm-kotlin)](https://central.sonatype.com/artifact/io.github.kotlinmania/crossterm-kotlin)
+[![Build status](https://img.shields.io/github/actions/workflow/status/KotlinMania/crossterm-kotlin/ci.yml?branch=main)](https://github.com/KotlinMania/crossterm-kotlin/actions)
 
-**Cross-platform terminal manipulation for Kotlin Multiplatform**
+This is a Kotlin Multiplatform line-by-line transliteration port of [`crossterm-rs/crossterm`](https://github.com/crossterm-rs/crossterm).
 
-[![Kotlin](https://img.shields.io/badge/Kotlin-2.3.0-7F52FF?logo=kotlin&logoColor=white)](https://kotlinlang.org)
-[![License](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
-[![Maven Central](https://img.shields.io/maven-central/v/io.github.kotlinmania/crossterm-kotlin?color=blue)](https://central.sonatype.com/artifact/io.github.kotlinmania/crossterm-kotlin)
-[![CI](https://github.com/KotlinMania/crossterm-kotlin/actions/workflows/ci.yml/badge.svg)](https://github.com/KotlinMania/crossterm-kotlin/actions/workflows/ci.yml)
+**Original Project:** This port is based on [`crossterm-rs/crossterm`](https://github.com/crossterm-rs/crossterm). All design credit and project intent belong to the upstream authors; this repository is a faithful port to Kotlin Multiplatform with no behavioural changes intended.
 
-[Installation](#installation) | [Quick Start](#quick-start) | [Platforms](#supported-platforms) | [API Reference](#api-reference) | [License](#license)
+### Porting status
 
-</div>
+This is an **in-progress port**. The goal is feature parity with the upstream Rust crate while providing a native Kotlin Multiplatform API. Every Kotlin file carries a `// port-lint: source <path>` header naming its upstream Rust counterpart so the AST-distance tool can track provenance.
 
 ---
 
-Crossterm-Kotlin is a Kotlin Multiplatform library for terminal manipulation. It is a faithful port of the Rust [crossterm](https://github.com/crossterm-rs/crossterm) crate, providing cross-platform APIs for cursor control, styling, terminal management, and event handling.
+## Upstream README — `crossterm-rs/crossterm`
+
+> The text below is reproduced and lightly edited from [`https://github.com/crossterm-rs/crossterm`](https://github.com/crossterm-rs/crossterm). It is the upstream project's own description and remains under the upstream authors' authorship; links have been rewritten to absolute upstream URLs so they continue to resolve from this repository.
+
+<h1 align="center"><img width="440" src="docs/crossterm_full.png" /></h1>
+
+[![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=Z8QK6XU749JB2) ![Travis][s7] [![Latest Version][s1]][l1] [![MIT][s2]][l2] [![docs][s3]][l3] ![Lines of Code][s6] [![Join us on Discord][s5]][l5]
+
+## Cross-platform Terminal Manipulation Library
+
+Crossterm is a pure-rust, terminal manipulation library that makes it possible to write cross-platform text-based interfaces (see [features](#features)). It supports all UNIX and Windows terminals down to Windows 7 (not all terminals are tested,
+see [Tested Terminals](#tested-terminals) for more info).
+
+## Table of Contents
+
+- [Cross-platform Terminal Manipulation Library](#cross-platform-terminal-manipulation-library)
+  - [Table of Contents](#table-of-contents)
+  - [Features](#features)
+    - [Tested Terminals](#tested-terminals)
+  - [Getting Started](#getting-started)
+    - [Feature Flags](#feature-flags)
+    - [Dependency Justification](#dependency-justification)
+    - [Other Resources](#other-resources)
+  - [Used By](#used-by)
+  - [Contributing](#contributing)
+  - [Authors](#authors)
+  - [License](#license)
 
 ## Features
 
-- **Cursor** - Move, hide/show, save/restore position, change cursor shape
-- **Styling** - 16 colors, 256 colors, RGB/true colors, text attributes (bold, italic, underline, etc.)
-- **Terminal** - Clear screen, scroll, alternate screen buffer, raw mode, window title
-- **Events** - Keyboard input, mouse events, terminal resize, focus tracking, bracketed paste
+- Cross-platform
+- Multi-threaded (send, sync)
+- Detailed documentation
+- Few dependencies
+- Full control over writing and flushing output buffer
+- Is tty
+- Cursor 
+    - Move the cursor N times (up, down, left, right)
+    - Move to previous / next line
+    - Move to column
+    - Set/get the cursor position
+    - Store the cursor position and restore to it later
+    - Hide/show the cursor
+    - Enable/disable cursor blinking (not all terminals do support this feature)
+- Styled output 
+    - Foreground color (16 base colors)
+    - Background color (16 base colors)
+    - 256 (ANSI) color support (Windows 10 and UNIX only)
+    - RGB color support (Windows 10 and UNIX only)
+    - Text attributes like bold, italic, underscore, crossed, etc
+- Terminal 
+    - Clear (all lines, current line, from cursor down and up, until new line)
+    - Scroll up, down
+    - Set/get the terminal size
+    - Exit current process
+    - Alternate screen
+    - Raw screen   
+    - Set terminal title
+    - Enable/disable line wrapping
+- Event 
+    - Input Events 
+    - Mouse Events (press, release, position, button, drag)
+    - Terminal Resize Events
+    - Advanced modifier (SHIFT | ALT | CTRL) support for both mouse and key events and
+    - futures Stream  (feature 'event-stream')
+    - Poll/read API
+    
+<!--
+WARNING: Do not change following heading title as it's used in the URL by other crates!
+-->
 
-## Supported Platforms
+### Tested Terminals
 
-| Platform | Status | Notes |
-|----------|--------|-------|
-| macOS (arm64, x64) | Full | Native terminal via POSIX |
-| Linux (x64) | Full | Native terminal via POSIX |
-| Windows (x64) | Full | Native console API via MinGW |
-| iOS | Partial | Styling only (no TTY) |
-| Android | Partial | Styling only (no TTY) |
-| JS/Browser | Partial | ANSI output only |
-| WasmJS | Partial | ANSI output only |
+- Console Host
+    - Windows 10 (Pro)
+    - Windows 8.1 (N)
+- Windows Terminal
+    - Windows 10 x86_64 (Enterprise)
+    - Windows 11 arm64 (Enterprise)
+- Ubuntu Desktop Terminal
+    - Ubuntu 23.04 64-bit
+    - Ubuntu 17.10
+    - Pop!_OS ( Ubuntu ) 20.04
+- (Arch, Manjaro) KDE Konsole
+- (Arch, NixOS) Kitty
+- Linux Mint
+- (OpenSuse) Alacritty
+- (Chrome OS) Crostini
+- Apple
+    - macOS Monterey 12.7.1 (Intel-Chip)
+    - macOS Sonoma 14.4 (M1 Max, Apple Silicon-Chip)
 
-## Installation
+This crate supports all UNIX terminals and Windows terminals down to Windows 7; however, not all of the
+terminals have been tested. If you have used this library for a terminal other than the above list without
+issues, then feel free to add it to the above list - I really would appreciate it!
 
-### Gradle (Kotlin DSL)
+## Getting Started
+_see the [examples directory](https://github.com/crossterm-rs/crossterm/blob/HEAD/examples/) and [documentation](https://docs.rs/crossterm/) for more advanced examples._
 
-```kotlin
-dependencies {
-    implementation("io.github.kotlinmania:crossterm-kotlin:0.1.3")
+<details>
+<summary>
+Click to show Cargo.toml.
+</summary>
+
+```toml
+[dependencies]
+crossterm = "0.27"
+```
+
+</details>
+<p></p>
+
+```rust
+use std::io::{stdout, Write};
+
+use crossterm::{
+    execute,
+    style::{Color, Print, ResetColor, SetBackgroundColor, SetForegroundColor},
+    ExecutableCommand,
+    event,
+};
+
+fn main() -> std::io::Result<()> {
+    // using the macro
+    execute!(
+        stdout(),
+        SetForegroundColor(Color::Blue),
+        SetBackgroundColor(Color::Red),
+        Print("Styled text here."),
+        ResetColor
+    )?;
+
+    // or using functions
+    stdout()
+        .execute(SetForegroundColor(Color::Blue))?
+        .execute(SetBackgroundColor(Color::Red))?
+        .execute(Print("Styled text here."))?
+        .execute(ResetColor)?;
+    
+    Ok(())
 }
 ```
 
-### Gradle (Groovy)
+Checkout this [list](https://docs.rs/crossterm/latest/crossterm/index.html#supported-commands) with all possible commands.
 
-```groovy
-dependencies {
-    implementation 'io.github.kotlinmania:crossterm-kotlin:0.1.3'
-}
+### Feature Flags
+
+```toml
+[dependencies.crossterm]
+version = "0.27"
+features = ["event-stream"] 
 ```
 
-## Quick Start
+| Feature        | Description                                  |
+|:---------------|:---------------------------------------------|
+| `event-stream` | `futures::Stream` producing `Result<Event>`. |
+| `serde`        | (De)serializing of events.                   |
+| `events`        | Reading input/system events (enabled by default) |
+| `filedescriptor` | Use raw filedescriptor for all events rather then mio dependency |
+| `derive-more`  | Adds `is_*` helper functions for event types |
+| `osc52`        | Enables crossterm::clipboard                 |
 
-### Cursor Movement
 
-```kotlin
-import io.github.kotlinmania.crossterm.cursor.*
-import io.github.kotlinmania.crossterm.execute
+To use crossterm as a very thin layer you can disable the `events` feature or use `filedescriptor` feature. 
+This can disable `mio` / `signal-hook` / `signal-hook-mio` dependencies.
 
-// Move cursor to column 10, row 5
-print(MoveTo(10u, 5u).ansiString())
+### Dependency Justification
 
-// Hide and show cursor
-print(Hide.ansiString())
-print(Show.ansiString())
+| Dependency     | Used for                                                                         | Included                              |
+|:---------------|:---------------------------------------------------------------------------------|:--------------------------------------|
+| `bitflags`     | `KeyModifiers`, those are differ based on input.                                 | always                                |
+| `parking_lot`  | locking `RwLock`s with a timeout, const mutexes.                                 | always                                |
+| `libc`         | UNIX terminal_size/raw modes/set_title and several other low level functionality. | optional (`events` feature), UNIX only |
+| `Mio`          | event readiness polling, waking up poller                                        | optional (`events` feature), UNIX only |
+| `signal-hook`  | signal-hook is used to handle terminal resize SIGNAL with Mio.                   |  optional (`events` feature),UNIX only |
+| `winapi`       | Used for low-level windows system calls which ANSI codes can't replace           | windows only                          |
+| `futures-core` | For async stream of events                                                       | only with `event-stream` feature flag |
+| `serde`        | ***ser***ializing and ***de***serializing of events                              | only with `serde` feature flag        |
+| `derive_more`  | Adds `is_*` helper functions for event types                                     | optional (`derive-more` feature), included by default |
+| `base64`       | Encoding clipboard data for OSC52 sequences in crossterm::clipboard              | only with `osc52` feature flag        |
 
-// Save and restore position
-print(SavePosition.ansiString())
-print(MoveTo(0u, 0u).ansiString())
-print(RestorePosition.ansiString())
-```
+### Other Resources
 
-### Text Styling
+- [API documentation](https://docs.rs/crossterm/)
+- [Deprecated examples repository](https://github.com/crossterm-rs/examples)
 
-```kotlin
-import io.github.kotlinmania.crossterm.style.*
-import io.github.kotlinmania.crossterm.style.types.*
+## Used By
 
-// Basic colors
-print(SetForegroundColor(Color.Red).ansiString())
-print("Red text")
-print(ResetColor.ansiString())
-
-// RGB colors
-print(SetForegroundColor(Color.Rgb(255u, 128u, 0u)).ansiString())
-print("Orange text")
-
-// 256-color palette
-print(SetBackgroundColor(Color.AnsiValue(220u)).ansiString())
-
-// Text attributes
-print(SetAttribute(Attribute.Bold).ansiString())
-print(SetAttribute(Attribute.Italic).ansiString())
-print("Bold and italic")
-print(SetAttribute(Attribute.Reset).ansiString())
-
-// Styled content (chainable)
-val styled = "Hello".stylize()
-    .with(Color.Cyan)
-    .on(Color.DarkBlue)
-    .bold()
-    .italic()
-```
-
-### Terminal Control
-
-```kotlin
-import io.github.kotlinmania.crossterm.terminal.*
-
-// Enter alternate screen buffer (like vim/less)
-print(EnterAlternateScreen.ansiString())
-
-// Clear screen
-print(Clear(ClearType.All).ansiString())
-
-// Set window title
-print(SetTitle("My App").ansiString())
-
-// Enable raw mode for character-by-character input
-enableRawMode()
-// ... handle input ...
-disableRawMode()
-
-// Leave alternate screen
-print(LeaveAlternateScreen.ansiString())
-```
-
-### Event Handling
-
-```kotlin
-import io.github.kotlinmania.crossterm.event.*
-
-// Enable mouse capture
-print(EnableMouseCapture.ansiString())
-
-// Poll for events with timeout
-if (poll(100.milliseconds)) {
-    when (val event = read()) {
-        is Event.Key -> {
-            val key = event.keyEvent
-            when (key.code) {
-                is KeyCode.Char -> println("Key: ${(key.code as KeyCode.Char).char}")
-                KeyCode.Enter -> println("Enter pressed")
-                KeyCode.Esc -> println("Escape pressed")
-                else -> {}
-            }
-        }
-        is Event.Mouse -> {
-            val mouse = event.mouseEvent
-            println("Mouse ${mouse.kind} at (${mouse.column}, ${mouse.row})")
-        }
-        is Event.Resize -> {
-            println("Terminal resized to ${event.columns}x${event.rows}")
-        }
-        Event.FocusGained -> println("Focus gained")
-        Event.FocusLost -> println("Focus lost")
-        is Event.Paste -> println("Pasted: ${event.content}")
-    }
-}
-
-// Disable mouse capture
-print(DisableMouseCapture.ansiString())
-```
-
-## API Reference
-
-### Modules
-
-| Module | Description |
-|--------|-------------|
-| `io.github.kotlinmania.crossterm.cursor` | Cursor movement and visibility |
-| `io.github.kotlinmania.crossterm.style` | Colors, attributes, and styled content |
-| `io.github.kotlinmania.crossterm.terminal` | Screen control, raw mode, terminal info |
-| `io.github.kotlinmania.crossterm.event` | Keyboard, mouse, and system events |
-
-### Command Pattern
-
-All terminal commands implement a common pattern:
-
-```kotlin
-interface Command {
-    fun ansiString(): String      // Get ANSI escape sequence
-    fun writeAnsi(writer: Writer) // Write to a writer
-}
-```
-
-Commands can be executed individually or batched:
-
-```kotlin
-// Individual
-print(MoveTo(0u, 0u).ansiString())
-
-// Batched
-print(execute(
-    MoveTo(0u, 0u),
-    Clear(ClearType.All),
-    SetForegroundColor(Color.Green)
-))
-```
-
-## Building from Source
-
-```bash
-# Clone the repository
-git clone https://github.com/KotlinMania/crossterm-kotlin.git
-cd crossterm-kotlin
-
-# Build all targets
-./gradlew assemble
-
-# Run tests
-./gradlew allTests
-
-# Build for specific platform
-./gradlew macosArm64MainKlibrary
-./gradlew linuxX64MainKlibrary
-./gradlew mingwX64MainKlibrary
-```
+- [Broot](https://dystroy.org/broot/)
+- [Cursive](https://github.com/gyscos/Cursive)
+- [Ratatui](https://github.com/ratatui/ratatui)
+- [Rust-sloth](https://github.com/ecumene/rust-sloth)
+- [Rusty-rain](https://github.com/cowboy8625/rusty-rain)
 
 ## Contributing
+  
+We highly appreciate when anyone contributes to this crate. Before you do, please,
+read the [Contributing](https://github.com/crossterm-rs/crossterm/blob/HEAD/docs/CONTRIBUTING.md) guidelines. 
 
-Contributions are welcome! Please feel free to submit issues and pull requests.
+## Authors
 
-This project uses:
-- Kotlin 2.3.0
-- Gradle 9.2.1
-- kotlinx-coroutines for async operations
-- POSIX APIs on Unix-like systems
-- Windows Console API on Windows
-
-## Acknowledgements
-
-This Kotlin Multiplatform library is a port of the excellent [crossterm](https://github.com/crossterm-rs/crossterm) Rust crate. Special thanks to [Timon](https://github.com/TimonPost) and the crossterm-rs maintainers for creating such a well-designed cross-platform terminal library.
+* **Timon Post** - *Project Owner & creator*
 
 ## License
 
-This project is licensed under the [MIT License](./LICENSE).
+This project, `crossterm` and all its sub-crates: `crossterm_screen`, `crossterm_cursor`, `crossterm_style`,
+`crossterm_input`, `crossterm_terminal`, `crossterm_winapi`, `crossterm_utils` are licensed under the MIT
+License - see the [LICENSE](https://github.com/crossterm-rs/crossterm/blob/master/LICENSE) file for details.
 
-```
-Copyright (c) 2019 Timon (crossterm-rs)
-Copyright (c) 2024-2026 Sydney Renee, The Solace Project
-```
+[s1]: https://img.shields.io/crates/v/crossterm.svg
+[l1]: https://crates.io/crates/crossterm
+
+[s2]: https://img.shields.io/badge/license-MIT-blue.svg
+[l2]: ./LICENSE
+
+[s3]: https://docs.rs/crossterm/badge.svg
+[l3]: https://docs.rs/crossterm/
+
+[s3]: https://docs.rs/crossterm/badge.svg
+[l3]: https://docs.rs/crossterm/
+
+[s5]: https://img.shields.io/discord/560857607196377088.svg?logo=discord
+[l5]: https://discord.gg/K4nyTDB
+
+[s6]: https://tokei.rs/b1/github/crossterm-rs/crossterm?category=code
+[s7]: https://travis-ci.org/crossterm-rs/crossterm.svg?branch=master
 
 ---
 
-<div align="center">
+## About this Kotlin port
 
-**Maintained by [Sydney Renee](mailto:sydney@solace.ofharmony.ai) of [The Solace Project](https://github.com/TheSolaceProject)**
+### Installation
 
-Part of the [KotlinMania](https://github.com/KotlinMania) organization
+```kotlin
+dependencies {
+    implementation("io.github.kotlinmania:crossterm-kotlin:0.1.4")
+}
+```
 
-</div>
+### Building
+
+```bash
+./gradlew build
+./gradlew test
+```
+
+### Targets
+
+- macOS arm64
+- Linux x64
+- Windows mingw-x64
+- iOS arm64 / simulator-arm64 (Swift export + XCFramework)
+- JS (browser + Node.js)
+- Wasm-JS (browser + Node.js)
+- Android (API 24+)
+
+### Porting guidelines
+
+See [AGENTS.md](AGENTS.md) and [CLAUDE.md](CLAUDE.md) for translator discipline, port-lint header convention, and Rust → Kotlin idiom mapping.
+
+### License
+
+This Kotlin port is distributed under the same MIT license as the upstream [`crossterm-rs/crossterm`](https://github.com/crossterm-rs/crossterm). See [LICENSE](LICENSE) (and any sibling `LICENSE-*` / `NOTICE` files mirrored from upstream) for the full text.
+
+Original work copyrighted by the crossterm authors.  
+Kotlin port: Copyright (c) 2026 Sydney Renee and The Solace Project.
+
+### Acknowledgments
+
+Thanks to the [`crossterm-rs/crossterm`](https://github.com/crossterm-rs/crossterm) maintainers and contributors for the original Rust implementation. This port reproduces their work in Kotlin Multiplatform; bug reports about upstream design or behavior should go to the upstream repository.
