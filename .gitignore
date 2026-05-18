@@ -1,43 +1,49 @@
-target
-/.idea/
-/*.iml
-.env
-/build/
-/.gradle/
-/.android-sdk/
-/.kotlin/
-local.properties
+# Kotlin/Gradle build artifacts
+build/
+.gradle/
+.kotlin/
+*.class
+*.jar
+*.war
+*.ear
 
-# Upstream Rust sources for comparison
-/tmp/
+# Keep the Gradle wrapper jar checked in so CI can run `./gradlew`.
+!gradle/wrapper/gradle-wrapper.jar
 
-# AST Distance tool build artifacts
-/tools/ast_distance/build/
-/tools/ast_distance/ast_distance
-/tools/ast_distance/.cache/
-/tools/ast_distance/tasks.json
-/tools/ast_distance/tasks.json.lock
+# IDE
+.idea/
+*.iml
+out/
 
-# Generated port reports
+# Upstream Rust source — clone freshly when porting begins
+tmp/
+!tmp/.gitkeep
+
+# AST distance reports and binaries
 port_status_report.md
 high_priority_ports.md
-NEXT_ACTIONS.md
-deep_report.txt
+ast_distance_*.txt
+.cache/
+*.lock
+kotlin-js-store/*
+!kotlin-js-store/package.json
+!kotlin-js-store/yarn.lock
+!kotlin-js-store/wasm/
+!kotlin-js-store/wasm/yarn.lock
+tools/ast_distance/ast_distance
+tools/ast_distance/build/
 
-# Task tracking (local dev)
-tasks.json
-tasks.json.lock
-tasks_new.json
-tasks_new.json.lock
+# JVM heap dumps
+*.hprof
+java_pid*.hprof
 
-# JS/WASM artifacts
-/kotlin-js-store/*
-!/kotlin-js-store/yarn.lock
-!/kotlin-js-store/wasm/
-!/kotlin-js-store/wasm/yarn.lock
-
-# TypeScript tool dependencies
-/tools/ast_distance/typescript/node_modules/
-/tools/ast_distance/typescript/dist/
+# macOS Finder metadata
 .DS_Store
-mingwMain/src/event/sys/windows/parse.kt.backup
+
+# Python bytecode
+__pycache__/
+*.pyc
+
+# Android SDK
+/.android-sdk/
+local.properties
