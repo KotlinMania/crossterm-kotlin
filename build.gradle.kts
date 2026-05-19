@@ -127,7 +127,7 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0")
-                implementation("org.jetbrains.kotlinx:atomicfu:0.27.0")
+                implementation("org.jetbrains.kotlinx:atomicfu:0.32.1")
             }
         }
         val commonTest by getting {
