@@ -277,41 +277,61 @@ kotlin {
 
     sourceSets {
         val commonMain by getting {
+            kotlin.srcDir("commonMain/src")
             dependencies {
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0")
                 implementation("org.jetbrains.kotlinx:atomicfu:0.32.1")
             }
         }
         val commonTest by getting {
+            kotlin.srcDir("commonTest/kotlin")
             dependencies {
                 implementation(kotlin("test"))
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.11.0")
             }
         }
         val desktopPosixMain by creating {
+            kotlin.srcDir("desktopPosixMain/src")
+            kotlin.srcDir("posixMain/src")
             dependsOn(nativeMain.get())
         }
-        val macosMain by getting {
-            dependsOn(desktopPosixMain)
-        }
         val otherMain by creating {
+            kotlin.srcDir("otherMain/src")
             dependsOn(commonMain)
         }
         val androidMain by getting {
+            kotlin.srcDir("androidMain/src")
             dependsOn(otherMain)
-        }
-        val iosMain by getting {
-            dependsOn(otherMain)
-            dependsOn(desktopPosixMain)
         }
         val jsMain by getting {
+            kotlin.srcDir("jsMain/src")
             dependsOn(otherMain)
         }
         val linuxMain by getting {
+            kotlin.srcDir("linuxMain/src")
             dependsOn(desktopPosixMain)
             dependsOn(otherMain)
         }
         val wasmJsMain by getting {
+            kotlin.srcDir("wasmJsMain/src")
+            dependsOn(otherMain)
+        }
+        val mingwMain by getting {
+            kotlin.srcDir("mingwMain/src")
+        }
+        val appleMain by getting {
+            kotlin.srcDir("appleMain/src")
+            dependsOn(desktopPosixMain)
+        }
+        val tvosMain by getting {
+            dependsOn(desktopPosixMain)
+        }
+        val watchosMain by getting {
+            dependsOn(desktopPosixMain)
+        }
+        val androidNativeMain by getting {
+            kotlin.srcDir("androidNativeMain/src")
+            dependsOn(desktopPosixMain)
             dependsOn(otherMain)
         }
     }

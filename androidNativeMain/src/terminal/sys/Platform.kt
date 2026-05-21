@@ -10,30 +10,31 @@ import platform.posix.tcgetattr
 import platform.posix.tcsetattr
 import platform.posix.termios
 
-// Termios flag constants for macOS
-private const val IGNBRK: ULong = 0x00000001u
-private const val BRKINT: ULong = 0x00000002u
-private const val PARMRK: ULong = 0x00000008u
-private const val ISTRIP: ULong = 0x00000020u
-private const val INLCR: ULong = 0x00000040u
-private const val IGNCR: ULong = 0x00000080u
-private const val ICRNL: ULong = 0x00000100u
-private const val IXON: ULong = 0x00000400u
-private const val OPOST: ULong = 0x00000001u
-private const val ECHO: ULong = 0x00000008u
-private const val ECHONL: ULong = 0x00000040u
-private const val ICANON: ULong = 0x00000100u
-private const val ISIG: ULong = 0x00000080u
-private const val IEXTEN: ULong = 0x00008000u
-private const val CSIZE: ULong = 0x00000300u
-private const val PARENB: ULong = 0x00001000u
-private const val CS8: ULong = 0x00000300u
+// Termios flag constants for Android Native (bionic libc).
+// tcflag_t is UInt (32-bit) on Android, matching Linux.
+private const val IGNBRK: UInt = 0x00000001u
+private const val BRKINT: UInt = 0x00000002u
+private const val PARMRK: UInt = 0x00000008u
+private const val ISTRIP: UInt = 0x00000020u
+private const val INLCR: UInt = 0x00000040u
+private const val IGNCR: UInt = 0x00000080u
+private const val ICRNL: UInt = 0x00000100u
+private const val IXON: UInt = 0x00000400u
+private const val OPOST: UInt = 0x00000001u
+private const val ECHO: UInt = 0x00000008u
+private const val ECHONL: UInt = 0x00000040u
+private const val ICANON: UInt = 0x00000002u
+private const val ISIG: UInt = 0x00000001u
+private const val IEXTEN: UInt = 0x00008000u
+private const val CSIZE: UInt = 0x00000030u
+private const val PARENB: UInt = 0x00000100u
+private const val CS8: UInt = 0x00000030u
 
 private data class SavedTermios(
-    val c_iflag: ULong,
-    val c_oflag: ULong,
-    val c_cflag: ULong,
-    val c_lflag: ULong
+    val c_iflag: UInt,
+    val c_oflag: UInt,
+    val c_cflag: UInt,
+    val c_lflag: UInt
 )
 
 private var savedTermios: SavedTermios? = null
@@ -102,4 +103,3 @@ internal actual fun disableRawModeImpl() {
         savedTermios = null
     }
 }
-

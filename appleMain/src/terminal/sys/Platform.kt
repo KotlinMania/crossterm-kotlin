@@ -10,7 +10,8 @@ import platform.posix.tcgetattr
 import platform.posix.tcsetattr
 import platform.posix.termios
 
-// Termios flag constants for macOS
+// Termios flag constants for Darwin (macOS, iOS, tvOS, watchOS).
+// tcflag_t is ULong (64-bit) on Darwin.
 private const val IGNBRK: ULong = 0x00000001u
 private const val BRKINT: ULong = 0x00000002u
 private const val PARMRK: ULong = 0x00000008u
@@ -102,4 +103,3 @@ internal actual fun disableRawModeImpl() {
         savedTermios = null
     }
 }
-
