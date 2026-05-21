@@ -3,6 +3,7 @@ package io.github.kotlinmania.crossterm.terminal.sys
 
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.alloc
+import kotlinx.cinterop.convert
 import kotlinx.cinterop.memScoped
 import kotlinx.cinterop.ptr
 import platform.posix.TCSANOW
@@ -50,10 +51,10 @@ internal actual fun enableRawModeImpl() {
         }
 
         savedTermios = SavedTermios(
-            c_iflag = originalTermios.c_iflag,
-            c_oflag = originalTermios.c_oflag,
-            c_cflag = originalTermios.c_cflag,
-            c_lflag = originalTermios.c_lflag
+            c_iflag = originalTermios.c_iflag.convert(),
+            c_oflag = originalTermios.c_oflag.convert(),
+            c_cflag = originalTermios.c_cflag.convert(),
+            c_lflag = originalTermios.c_lflag.convert()
         )
 
         val rawTermios = alloc<termios>()
@@ -63,15 +64,15 @@ internal actual fun enableRawModeImpl() {
         rawTermios.c_lflag = originalTermios.c_lflag
 
         val iflagMask = IGNBRK or BRKINT or PARMRK or ISTRIP or INLCR or IGNCR or ICRNL or IXON
-        rawTermios.c_iflag = rawTermios.c_iflag and iflagMask.inv()
+        rawTermios.c_iflag = rawTermios.c_iflag and iflagMask.inv().convert()
 
-        rawTermios.c_oflag = rawTermios.c_oflag and OPOST.inv()
+        rawTermios.c_oflag = rawTermios.c_oflag and OPOST.inv().convert()
 
         val lflagMask = ECHO or ECHONL or ICANON or ISIG or IEXTEN
-        rawTermios.c_lflag = rawTermios.c_lflag and lflagMask.inv()
+        rawTermios.c_lflag = rawTermios.c_lflag and lflagMask.inv().convert()
 
         val cflagMask = CSIZE or PARENB
-        rawTermios.c_cflag = (rawTermios.c_cflag and cflagMask.inv()) or CS8
+        rawTermios.c_cflag = (rawTermios.c_cflag and cflagMask.inv().convert()) or CS8.convert()
 
         if (tcsetattr(fd, TCSANOW, rawTermios.ptr) != 0) {
             throw IllegalStateException("Failed to set terminal to raw mode")
@@ -91,10 +92,10 @@ internal actual fun disableRawModeImpl() {
             throw IllegalStateException("Failed to get terminal attributes")
         }
 
-        termiosToRestore.c_iflag = saved.c_iflag
-        termiosToRestore.c_oflag = saved.c_oflag
-        termiosToRestore.c_cflag = saved.c_cflag
-        termiosToRestore.c_lflag = saved.c_lflag
+        termiosToRestore.c_iflag = saved.c_iflag.convert()
+        termiosToRestore.c_oflag = saved.c_oflag.convert()
+        termiosToRestore.c_cflag = saved.c_cflag.convert()
+        termiosToRestore.c_lflag = saved.c_lflag.convert()
 
         if (tcsetattr(fd, TCSANOW, termiosToRestore.ptr) != 0) {
             throw IllegalStateException("Failed to restore terminal mode")

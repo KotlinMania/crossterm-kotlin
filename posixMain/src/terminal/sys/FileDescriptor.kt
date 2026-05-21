@@ -40,7 +40,7 @@ class FileDesc private constructor(
             if (result < 0) {
                 throw IllegalStateException("Failed to read from file descriptor: errno=${platform.posix.errno}")
             }
-            result.toInt()
+            (result as Number).toInt()
         }
     }
 
