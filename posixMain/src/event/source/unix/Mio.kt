@@ -269,7 +269,7 @@ class MioInternalEventSource private constructor(
     private fun processTtyInput(): InternalEvent? {
         while (true) {
             val readResult = ttyBuffer.usePinned { pinned ->
-                read(ttyFd, pinned.addressOf(0), TTY_BUFFER_SIZE.toULong())
+                read(ttyFd, pinned.addressOf(0), TTY_BUFFER_SIZE.convert())
             }
 
             if (readResult > 0) {
@@ -311,7 +311,7 @@ class MioInternalEventSource private constructor(
     private fun consumeWakeSignal(readFd: Int): Boolean {
         val buffer = ByteArray(1)
         val result = buffer.usePinned { pinned ->
-            read(readFd, pinned.addressOf(0), 1uL)
+            read(readFd, pinned.addressOf(0), 1u.convert())
         }
         return result > 0
     }

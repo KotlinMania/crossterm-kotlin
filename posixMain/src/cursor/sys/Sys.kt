@@ -25,7 +25,7 @@ import kotlin.time.Duration.Companion.milliseconds
 private fun writeToStdout(str: String) {
     val bytes = str.encodeToByteArray()
     bytes.usePinned { pinned ->
-        write(STDOUT_FILENO, pinned.addressOf(0), bytes.size.toULong())
+        write(STDOUT_FILENO, pinned.addressOf(0), bytes.size.convert())
     }
     fflush(null)
 }

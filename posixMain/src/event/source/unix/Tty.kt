@@ -314,11 +314,11 @@ class TtyInternalEventSource private constructor(
 private fun readComplete(fd: Int, buf: ByteArray): Int {
     while (true) {
         buf.usePinned { pinned ->
-            val result = read(fd, pinned.addressOf(0), buf.size.toULong())
+            val result = read(fd, pinned.addressOf(0), buf.size.convert())
 
             when {
                 result > 0 -> return result.toInt()
-                result == 0L -> return 0
+                result == 0 -> return 0
                 else -> {
                     when (errno) {
                         EWOULDBLOCK, EAGAIN -> return 0
@@ -375,7 +375,7 @@ private fun registerSigwinchHandler(senderFd: Int) {
         // Note: This is async-signal-safe as write() is on the safe list
         val buf = ByteArray(1) { 0 }
         buf.usePinned { pinned ->
-            write(sigwinchSenderFd, pinned.addressOf(0), 1u)
+            write(sigwinchSenderFd, pinned.addressOf(0), 1u.convert())
         }
     })
 }
