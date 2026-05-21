@@ -14,6 +14,7 @@ import kotlinx.cinterop.reinterpret
 import platform.posix.STDIN_FILENO
 import platform.posix.STDOUT_FILENO
 import platform.posix.TIOCGWINSZ
+import platform.posix.RTLD_DEFAULT
 import platform.posix.dlsym
 import platform.posix.isatty
 import platform.posix.winsize
@@ -103,8 +104,8 @@ actual fun windowSize(): WindowSize {
 @OptIn(ExperimentalForeignApi::class)
 private val ioctlSymbol by lazy {
     // Resolved lazily because terminal-size probing is not always used.
-    dlsym(null, "ioctl")?.reinterpret<CFunction<(Int, Int, CPointer<winsize>?) -> Int>>()
-        ?: error("Failed to resolve ioctl symbol: terminal size queries are unavailable")
+    dlsym(RTLD_DEFAULT, "ioctl")?.reinterpret<CFunction<(Int, Int, CPointer<winsize>?) -> Int>>()
+        ?: error("Failed to resolve ioctl symbol from POSIX C library; terminal size queries are unavailable")
 }
 
 /**
