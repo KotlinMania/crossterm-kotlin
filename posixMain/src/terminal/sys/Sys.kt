@@ -105,7 +105,9 @@ actual fun windowSize(): WindowSize {
 private val ioctlSymbol by lazy {
     // Resolved lazily because terminal-size probing is not always used.
     dlsym(RTLD_DEFAULT, "ioctl")?.reinterpret<CFunction<(Int, Int, CPointer<winsize>?) -> Int>>()
-        ?: error("Failed to resolve ioctl symbol from POSIX C library; terminal size queries are unavailable")
+        ?: error(
+            "Failed to resolve ioctl symbol from POSIX C library on this platform; terminal size queries are unavailable"
+        )
 }
 
 /**
