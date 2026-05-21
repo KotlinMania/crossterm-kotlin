@@ -2,15 +2,20 @@
 package io.github.kotlinmania.crossterm.terminal.sys
 
 import io.github.kotlinmania.crossterm.terminal.WindowSize
+import kotlinx.cinterop.CFunction
+import kotlinx.cinterop.CPointer
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.alloc
 import kotlinx.cinterop.convert
+import kotlinx.cinterop.invoke
 import kotlinx.cinterop.memScoped
 import kotlinx.cinterop.ptr
+import kotlinx.cinterop.reinterpret
 import platform.posix.STDIN_FILENO
 import platform.posix.STDOUT_FILENO
 import platform.posix.TIOCGWINSZ
-import platform.posix.ioctl
+import platform.posix.RTLD_DEFAULT
+import platform.posix.dlsym
 import platform.posix.isatty
 import platform.posix.winsize
 
@@ -83,7 +88,7 @@ actual fun windowSize(): WindowSize {
         val size = alloc<winsize>()
         val fd = getTtyFd()
 
-        if (ioctl(fd, TIOCGWINSZ.convert(), size.ptr) != 0) {
+        if (ioctlSymbol(fd, TIOCGWINSZ.convert(), size.ptr) != 0) {
             throw IllegalStateException("Failed to get window size")
         }
 
@@ -94,6 +99,15 @@ actual fun windowSize(): WindowSize {
             height = size.ws_ypixel
         )
     }
+}
+
+@OptIn(ExperimentalForeignApi::class)
+private val ioctlSymbol by lazy {
+    // Resolved lazily because terminal-size probing is not always used.
+    dlsym(RTLD_DEFAULT, "ioctl")?.reinterpret<CFunction<(Int, Int, CPointer<winsize>?) -> Int>>()
+        ?: error(
+            "Failed to resolve ioctl symbol from POSIX C library on this platform; terminal size queries are unavailable"
+        )
 }
 
 /**
