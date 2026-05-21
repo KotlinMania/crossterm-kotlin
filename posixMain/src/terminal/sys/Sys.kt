@@ -87,7 +87,7 @@ actual fun windowSize(): WindowSize {
         val size = alloc<winsize>()
         val fd = getTtyFd()
 
-        if (ioctlCall(fd, TIOCGWINSZ.convert(), size.ptr) != 0) {
+        if (ioctlSymbol(fd, TIOCGWINSZ.convert(), size.ptr) != 0) {
             throw IllegalStateException("Failed to get window size")
         }
 
@@ -104,12 +104,7 @@ actual fun windowSize(): WindowSize {
 private val ioctlSymbol by lazy {
     // Resolved lazily because terminal-size probing is not always used.
     dlsym(null, "ioctl")?.reinterpret<CFunction<(Int, Int, CPointer<winsize>?) -> Int>>()
-        ?: error("ioctl symbol not found in process C library")
-}
-
-@OptIn(ExperimentalForeignApi::class)
-private fun ioctlCall(fd: Int, request: Int, size: CPointer<winsize>): Int {
-    return ioctlSymbol(fd, request, size)
+        ?: error("Failed to resolve ioctl symbol: terminal size queries are unavailable")
 }
 
 /**
