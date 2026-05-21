@@ -326,10 +326,10 @@ kotlin {
             dependsOn(desktopPosixMain)
         }
         val tvosMain by getting {
-            dependsOn(desktopPosixMain)
+            // tvosMain already depends on desktopPosixMain via hierarchy template
         }
         val watchosMain by getting {
-            dependsOn(desktopPosixMain)
+            // watchosMain already depends on desktopPosixMain via hierarchy template
         }
         val androidNativeMain by getting {
             kotlin.srcDir("androidNativeMain/src")
