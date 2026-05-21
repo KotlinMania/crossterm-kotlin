@@ -34,11 +34,15 @@ private val rawModeEnabled: AtomicBoolean = AtomicBoolean(false)
  */
 @OptIn(ExperimentalAtomicApi::class)
 actual fun enableRawMode() {
-    if (rawModeEnabled.load()) {
+    if (!rawModeEnabled.compareAndSet(false, true)) {
         return
     }
-    enableRawModeImpl()
-    rawModeEnabled.store(true)
+    try {
+        enableRawModeImpl()
+    } catch (t: Throwable) {
+        rawModeEnabled.store(false)
+        throw t
+    }
 }
 
 /**
@@ -47,11 +51,15 @@ actual fun enableRawMode() {
  */
 @OptIn(ExperimentalAtomicApi::class)
 actual fun disableRawMode() {
-    if (!rawModeEnabled.load()) {
+    if (!rawModeEnabled.compareAndSet(true, false)) {
         return
     }
-    disableRawModeImpl()
-    rawModeEnabled.store(false)
+    try {
+        disableRawModeImpl()
+    } catch (t: Throwable) {
+        rawModeEnabled.store(true)
+        throw t
+    }
 }
 
 /**
@@ -70,10 +78,6 @@ actual fun size(): Pair<UShort, UShort> {
     val ws = try {
         windowSize()
     } catch (e: Exception) {
-        val tputSize = tputSize()
-        if (tputSize != null) {
-            return tputSize
-        }
         throw IllegalStateException("Failed to determine terminal size", e)
     }
     return Pair(ws.columns, ws.rows)
@@ -124,12 +128,4 @@ internal fun getTtyFd(): Int {
     } else {
         STDOUT_FILENO
     }
-}
-
-private fun tputValue(arg: String): UShort? = null
-
-private fun tputSize(): Pair<UShort, UShort>? {
-    val cols = tputValue("cols") ?: return null
-    val lines = tputValue("lines") ?: return null
-    return Pair(cols, lines)
 }
