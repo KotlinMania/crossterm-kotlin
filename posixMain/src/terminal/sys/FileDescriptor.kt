@@ -1,5 +1,4 @@
 // port-lint: source terminal/sys/file_descriptor.rs
-@file:Suppress("RedundantCallOfConversionMethod")
 package io.github.kotlinmania.crossterm.terminal.sys
 
 import kotlinx.cinterop.ExperimentalForeignApi

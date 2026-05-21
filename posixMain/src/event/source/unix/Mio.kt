@@ -1,5 +1,4 @@
 // port-lint: source event/source/unix/mio.rs
-@file:Suppress("RedundantCallOfConversionMethod")
 package io.github.kotlinmania.crossterm.event.source.unix
 
 import io.github.kotlinmania.crossterm.event.Event
