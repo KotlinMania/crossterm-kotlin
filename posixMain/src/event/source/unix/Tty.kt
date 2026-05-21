@@ -1,4 +1,5 @@
 // port-lint: source event/source/unix/tty.rs
+@file:Suppress("RedundantCallOfConversionMethod")
 package io.github.kotlinmania.crossterm.event.source.unix
 
 import io.github.kotlinmania.crossterm.event.*
@@ -317,8 +318,8 @@ private fun readComplete(fd: Int, buf: ByteArray): Int {
             val result = read(fd, pinned.addressOf(0), buf.size.convert())
 
             when {
-                result > 0 -> return result.toInt()
-                result == 0 -> return 0
+                result > 0 -> return (result as Number).toInt()
+                (result as Number).toInt() == 0 -> return 0
                 else -> {
                     when (errno) {
                         EWOULDBLOCK, EAGAIN -> return 0

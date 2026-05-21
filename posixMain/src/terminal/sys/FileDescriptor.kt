@@ -1,4 +1,5 @@
 // port-lint: source terminal/sys/file_descriptor.rs
+@file:Suppress("RedundantCallOfConversionMethod")
 package io.github.kotlinmania.crossterm.terminal.sys
 
 import kotlinx.cinterop.ExperimentalForeignApi
@@ -40,7 +41,7 @@ class FileDesc private constructor(
             if (result < 0) {
                 throw IllegalStateException("Failed to read from file descriptor: errno=${platform.posix.errno}")
             }
-            result.toInt()
+            (result as Number).toInt()
         }
     }
 

@@ -1,4 +1,5 @@
 // port-lint: source event/source/unix/mio.rs
+@file:Suppress("RedundantCallOfConversionMethod")
 package io.github.kotlinmania.crossterm.event.source.unix
 
 import io.github.kotlinmania.crossterm.event.Event
@@ -273,7 +274,7 @@ class MioInternalEventSource private constructor(
             }
 
             if (readResult > 0) {
-                val readCount = readResult.toInt()
+                val readCount = (readResult as Number).toInt()
                 parser.advance(
                     ttyBuffer.copyOf(readCount),
                     more = readCount == TTY_BUFFER_SIZE

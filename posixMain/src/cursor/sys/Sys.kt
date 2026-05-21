@@ -10,6 +10,7 @@ import io.github.kotlinmania.crossterm.terminal.sys.enableRawMode
 import io.github.kotlinmania.crossterm.terminal.sys.isRawModeEnabled
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.addressOf
+import kotlinx.cinterop.convert
 import kotlinx.cinterop.usePinned
 import platform.posix.STDOUT_FILENO
 import platform.posix.fflush
