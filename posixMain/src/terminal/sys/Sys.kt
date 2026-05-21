@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION_ERROR")
+
 // port-lint: source terminal/sys/unix.rs
 package io.github.kotlinmania.crossterm.terminal.sys
 
