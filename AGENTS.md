@@ -323,12 +323,6 @@ leaving a TODO or using a JVM-only shortcut.
 - Subagent-driven `.kt` edits. Translation happens in the main loop so mistakes
   are visible immediately.
 
-## Documented suppressions
-
-- `posixMain/src/terminal/sys/Sys.kt` uses `@file:Suppress("DEPRECATION_ERROR")`
-  for `platform.posix.ioctl` because Android Native currently surfaces it as a
-  deprecation error while this code still needs ioctl-based terminal sizing.
-
 ## Tests and gates
 
 Use the repo's documented Gradle tasks. Common gates include:
