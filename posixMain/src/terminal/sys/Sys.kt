@@ -1,4 +1,6 @@
 @file:Suppress("DEPRECATION_ERROR")
+// Android Native currently reports platform.posix.ioctl as a deprecation error.
+// Keep this until the window-size call is migrated to a non-deprecated binding.
 
 // port-lint: source terminal/sys/unix.rs
 package io.github.kotlinmania.crossterm.terminal.sys
