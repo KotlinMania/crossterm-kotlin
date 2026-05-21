@@ -102,8 +102,9 @@ actual fun windowSize(): WindowSize {
 
 @OptIn(ExperimentalForeignApi::class)
 private val ioctlSymbol by lazy {
+    // Resolved lazily because terminal-size probing is not always used.
     dlsym(null, "ioctl")?.reinterpret<CFunction<(Int, Int, CPointer<winsize>?) -> Int>>()
-        ?: error("ioctl symbol not found")
+        ?: error("ioctl symbol not found in process C library")
 }
 
 @OptIn(ExperimentalForeignApi::class)
