@@ -10,6 +10,9 @@ build/
 # Keep the Gradle wrapper jar checked in so CI can run `./gradlew`.
 !gradle/wrapper/gradle-wrapper.jar
 
+# Keep the patched karma-webpack package
+!gradle/npm/karma-webpack/**
+
 # IDE
 .idea/
 *.iml
