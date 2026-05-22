@@ -318,6 +318,10 @@ kotlin {
             kotlin.srcDir("wasmJsMain/src")
             dependsOn(otherMain)
         }
+        val wasmWasiMain by getting {
+            kotlin.srcDir("wasmWasiMain/src")
+            dependsOn(otherMain)
+        }
         val mingwMain by getting {
             kotlin.srcDir("mingwMain/src")
         }

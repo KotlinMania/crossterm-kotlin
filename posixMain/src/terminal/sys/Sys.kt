@@ -10,6 +10,12 @@ import platform.posix.isatty
 import kotlin.concurrent.atomics.AtomicBoolean
 import kotlin.concurrent.atomics.ExperimentalAtomicApi
 
+// RTLD_DEFAULT is not available in platform.posix on all platforms.
+// On most POSIX systems, RTLD_DEFAULT is defined as ((void*)0) or similar.
+// Using null achieves the same effect for dlsym.
+@OptIn(ExperimentalForeignApi::class)
+private val RTLD_DEFAULT: kotlinx.cinterop.COpaquePointer? = null
+
 /**
  * Tracks whether raw mode is currently enabled.
  */
