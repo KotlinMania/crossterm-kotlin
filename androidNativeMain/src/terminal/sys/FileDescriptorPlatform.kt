@@ -9,7 +9,7 @@ import platform.posix.ssize_t
 
 // External declaration to work around different size_t types on different Android Native platforms
 @OptIn(ExperimentalForeignApi::class)
-private external fun read(__fd: Int, __buf: CValuesRef<*>?, __nbytes: ULong): ssize_t
+internal external fun read(__fd: Int, __buf: CValuesRef<*>?, __nbytes: ULong): ssize_t
 
 /**
  * Android Native-specific implementation to read from a file descriptor.
