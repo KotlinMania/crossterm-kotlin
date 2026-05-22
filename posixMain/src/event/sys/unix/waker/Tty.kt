@@ -70,7 +70,8 @@ class TtyWaker private constructor(
         lock.withLock {
             val buffer = byteArrayOf(0)
             buffer.usePinned { pinned ->
-                val result = write(writerFd, pinned.addressOf(0), 1u.convert())
+                // Use 1u for Android Native (UInt), platforms with ULong will implicitly convert
+                val result = write(writerFd, pinned.addressOf(0), 1u)
                 if (result < 0) {
                     throw IllegalStateException("Failed to write to wake stream: errno=${platform.posix.errno}")
                 }

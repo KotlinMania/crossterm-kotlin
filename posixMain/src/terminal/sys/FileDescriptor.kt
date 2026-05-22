@@ -2,14 +2,10 @@
 package io.github.kotlinmania.crossterm.terminal.sys
 
 import kotlinx.cinterop.ExperimentalForeignApi
-import kotlinx.cinterop.addressOf
-import kotlinx.cinterop.convert
-import kotlinx.cinterop.usePinned
 import platform.posix.STDIN_FILENO
 import platform.posix.close
 import platform.posix.isatty
 import platform.posix.open
-import platform.posix.read
 import platform.posix.O_RDWR
 
 /**
@@ -35,13 +31,7 @@ class FileDesc private constructor(
      * @throws IllegalStateException if the read fails
      */
     fun read(buffer: ByteArray): Int {
-        return buffer.usePinned { pinned ->
-            val result = read(fd, pinned.addressOf(0), buffer.size.convert())
-            if (result < 0) {
-                throw IllegalStateException("Failed to read from file descriptor: errno=${platform.posix.errno}")
-            }
-            (result as Number).toInt()
-        }
+        return readFromFd(fd, buffer)
     }
 
     /**
