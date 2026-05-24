@@ -2,7 +2,7 @@
 #
 # https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
 #
-# Covers two ecosystems present in this repo:
+# Covers three ecosystems present in this repo:
 #
 #   1. Gradle — kotlin-multiplatform plugin, kotlin-serialization plugin,
 #      android-kotlin-multiplatform-library plugin, vanniktech maven-publish,
@@ -14,11 +14,13 @@
 #      them straight from the workflow files, and a hand-kept list in this
 #      comment would silently drift from the actual pins.
 #
-# The vendored gradle/npm/karma-webpack/package.json is NOT covered: that
-# directory is a workspace-template-managed pin of karma-webpack and its
-# transitive deps, and bumping it here in isolation would drift from the
-# kotlinmania workspace baseline. Updates land via the workspace template,
-# not via Dependabot on this repo.
+#   3. npm — configured but with all updates ignored (open-pull-requests-limit: 0
+#      and ignore: "*" for all update types). This prevents Dependabot from
+#      attempting to create security updates for vendored npm dependencies in
+#      kotlin-js-store/ and gradle/npm/, which are workspace-template-managed
+#      and should not be updated independently. This configuration stops
+#      "security_update_not_possible" errors while still allowing Dependabot to
+#      track the dependency graph for security alerts.
 
 version: 2
 updates:
@@ -39,3 +41,12 @@ updates:
     labels:
       - "dependencies"
       - "github-actions"
+
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 0
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major", "version-update:semver-minor", "version-update:semver-patch"]
