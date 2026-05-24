@@ -10,6 +10,7 @@ import io.github.kotlinmania.crossterm.terminal.sys.enableRawMode
 import io.github.kotlinmania.crossterm.terminal.sys.isRawModeEnabled
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.addressOf
+import kotlinx.cinterop.convert
 import kotlinx.cinterop.usePinned
 import platform.posix.STDOUT_FILENO
 import platform.posix.fflush
@@ -25,7 +26,7 @@ import kotlin.time.Duration.Companion.milliseconds
 private fun writeToStdout(str: String) {
     val bytes = str.encodeToByteArray()
     bytes.usePinned { pinned ->
-        write(STDOUT_FILENO, pinned.addressOf(0), bytes.size.toULong())
+        write(STDOUT_FILENO, pinned.addressOf(0), bytes.size.convert())
     }
     fflush(null)
 }

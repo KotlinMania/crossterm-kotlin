@@ -2,14 +2,26 @@
 package io.github.kotlinmania.crossterm
 
 /**
+ * External JS function to check if a file descriptor is a TTY in Node.js.
+ */
+@JsName("isNodeTty")
+private external fun jsIsNodeTty(fd: Int): Boolean
+
+/**
  * WASM JavaScript implementation of isatty.
  *
- * In WASM/browser environments, there is no concept of TTY.
+ * In Node.js environments, delegates to a JS function that checks process.stdin/stdout/stderr.isTTY.
+ * In browser/non-Node environments, returns false.
  *
- * @param fd The file descriptor to check (ignored in WASM)
- * @return Always returns false in WASM environments
+ * Note: This requires a JS glue file that provides isNodeTty(fd) function.
+ *
+ * @param fd The file descriptor to check (0=stdin, 1=stdout, 2=stderr)
+ * @return true if the file descriptor refers to a TTY in a Node.js environment
  */
 actual fun isatty(fd: Int): Boolean {
-    // In WASM, there's no TTY concept
-    return false
+    return try {
+        jsIsNodeTty(fd)
+    } catch (_: Throwable) {
+        false
+    }
 }

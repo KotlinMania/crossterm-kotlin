@@ -112,7 +112,8 @@ class MioWaker private constructor(
             }
             val buffer = byteArrayOf(1)
             buffer.usePinned { pinned ->
-                val result = write(writeFd, pinned.addressOf(0), 1u.convert())
+                // Use 1u for Android Native (UInt), platforms with ULong will implicitly convert
+                val result = write(writeFd, pinned.addressOf(0), 1u)
                 if (result < 0) {
                     throw IllegalStateException("Failed to write to wake pipe: errno=${platform.posix.errno}")
                 }

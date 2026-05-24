@@ -3,19 +3,18 @@ package io.github.kotlinmania.crossterm.terminal.sys
 
 import io.github.kotlinmania.crossterm.terminal.WindowSize
 import kotlinx.cinterop.ExperimentalForeignApi
-import kotlinx.cinterop.alloc
-import kotlinx.cinterop.convert
-import kotlinx.cinterop.memScoped
-import kotlinx.cinterop.ptr
 import platform.posix.STDIN_FILENO
 import platform.posix.STDOUT_FILENO
-import platform.posix.TIOCGWINSZ
-import platform.posix.ioctl
 import platform.posix.isatty
-import platform.posix.winsize
 
 import kotlin.concurrent.atomics.AtomicBoolean
 import kotlin.concurrent.atomics.ExperimentalAtomicApi
+
+// RTLD_DEFAULT is not available in platform.posix on all platforms.
+// On most POSIX systems, RTLD_DEFAULT is defined as ((void*)0) or similar.
+// Using null achieves the same effect for dlsym.
+@OptIn(ExperimentalForeignApi::class)
+private val RTLD_DEFAULT: kotlinx.cinterop.COpaquePointer? = null
 
 /**
  * Tracks whether raw mode is currently enabled.
@@ -29,11 +28,15 @@ private val rawModeEnabled: AtomicBoolean = AtomicBoolean(false)
  */
 @OptIn(ExperimentalAtomicApi::class)
 actual fun enableRawMode() {
-    if (rawModeEnabled.load()) {
+    if (!rawModeEnabled.compareAndSet(false, true)) {
         return
     }
-    enableRawModeImpl()
-    rawModeEnabled.store(true)
+    try {
+        enableRawModeImpl()
+    } catch (t: Throwable) {
+        rawModeEnabled.store(false)
+        throw t
+    }
 }
 
 /**
@@ -42,11 +45,15 @@ actual fun enableRawMode() {
  */
 @OptIn(ExperimentalAtomicApi::class)
 actual fun disableRawMode() {
-    if (!rawModeEnabled.load()) {
+    if (!rawModeEnabled.compareAndSet(true, false)) {
         return
     }
-    disableRawModeImpl()
-    rawModeEnabled.store(false)
+    try {
+        disableRawModeImpl()
+    } catch (t: Throwable) {
+        rawModeEnabled.store(true)
+        throw t
+    }
 }
 
 /**
@@ -65,10 +72,6 @@ actual fun size(): Pair<UShort, UShort> {
     val ws = try {
         windowSize()
     } catch (e: Exception) {
-        val tputSize = tputSize()
-        if (tputSize != null) {
-            return tputSize
-        }
         throw IllegalStateException("Failed to determine terminal size", e)
     }
     return Pair(ws.columns, ws.rows)
@@ -79,21 +82,8 @@ actual fun size(): Pair<UShort, UShort> {
  */
 @OptIn(ExperimentalForeignApi::class)
 actual fun windowSize(): WindowSize {
-    memScoped {
-        val size = alloc<winsize>()
-        val fd = getTtyFd()
-
-        if (ioctl(fd, TIOCGWINSZ.convert(), size.ptr) != 0) {
-            throw IllegalStateException("Failed to get window size")
-        }
-
-        return WindowSize(
-            columns = size.ws_col,
-            rows = size.ws_row,
-            width = size.ws_xpixel,
-            height = size.ws_ypixel
-        )
-    }
+    val fd = getTtyFd()
+    return windowSizeViaIoctl(fd)
 }
 
 /**
@@ -110,12 +100,4 @@ internal fun getTtyFd(): Int {
     } else {
         STDOUT_FILENO
     }
-}
-
-private fun tputValue(arg: String): UShort? = null
-
-private fun tputSize(): Pair<UShort, UShort>? {
-    val cols = tputValue("cols") ?: return null
-    val lines = tputValue("lines") ?: return null
-    return Pair(cols, lines)
 }
