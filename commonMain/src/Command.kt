@@ -89,7 +89,7 @@ interface QueueableCommand : Appendable {
      *
      * # Notes
      *
-     * * In the case of UNIX and Windows 10, ANSI codes are written to the given 'writer'.
+     * * On UNIX and Windows 10, ANSI codes are written to the given writer.
      * * In case of Windows versions lower than 10, a direct WinAPI call will be made.
      *   The reason for this is that Windows versions lower than 10 do not support ANSI codes,
      *   and can therefore not be written to the given `writer`.
@@ -123,7 +123,7 @@ interface ExecutableCommand : QueueableCommand {
     /**
      * Executes the given command directly.
      *
-     * The given command's ANSI escape code will be written and flushed onto `Self`.
+     * The given command's ANSI escape code will be written and flushed onto this writer.
      *
      * # Arguments
      *
@@ -148,7 +148,7 @@ interface ExecutableCommand : QueueableCommand {
      *
      * # Notes
      *
-     * * In the case of UNIX and Windows 10, ANSI codes are written to the given 'writer'.
+     * * On UNIX and Windows 10, ANSI codes are written to the given writer.
      * * In case of Windows versions lower than 10, a direct WinAPI call will be made.
      *   The reason for this is that Windows versions lower than 10 do not support ANSI codes,
      *   and can therefore not be written to the given `writer`.
@@ -245,7 +245,7 @@ fun Command.ansiString(): String = buildString { writeAnsi(this) }
 /**
  * Executes multiple commands in sequence and returns the combined ANSI string.
  *
- * This is the Kotlin analogue of Rust's `execute!` macro when targeting ANSI output.
+ * This is the Kotlin command helper for combined ANSI output.
  */
 fun execute(vararg commands: Command): String = buildString {
     for (command in commands) {

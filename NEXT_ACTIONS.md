@@ -5,12 +5,12 @@ Based on AST analysis, here are the concrete next steps.
 ## Summary
 
 - **Files Present:** 26/48 (54.2%)
-- **Function parity:** 106/435 matched (target 505) — 24.4%
-- **Class/type parity:** 82/115 matched (target 160) — 71.3%
-- **Combined symbol parity:** 188/550 matched (target 665) — 34.2%
-- **Average inline-code cosine:** 0.28 (function body across 26 matched files)
+- **Function parity:** 105/435 matched (target 503) — 24.1%
+- **Class/type parity:** 82/115 matched (target 159) — 71.3%
+- **Combined symbol parity:** 187/550 matched (target 662) — 34.0%
+- **Average inline-code cosine:** 0.30 (function body across 26 matched files)
 - **Average documentation cosine:** 0.60 (doc text across 26 matched files)
-- **Cheat-zeroed Files:** 9
+- **Cheat-zeroed Files:** 8
 - **Critical Issues:** 21 files with <0.60 function similarity
 
 ## Priority 1: Fix Incomplete High-Dependency Files
@@ -29,13 +29,13 @@ Every matched file is listed below with function and type symbol parity.
 
 ### 1. command
 
-- **Target:** `Command [ZERO]`
-- **Similarity:** 0.00
+- **Target:** `Command`
+- **Similarity:** 0.50
 - **Dependents:** 2
-- **Priority Score:** 2021410.0
-- **Functions:** 8/9 matched (target 13)
-- **Missing functions:** `write_ansi`
-- **Types:** 4/5 matched
+- **Priority Score:** 2031405.0
+- **Functions:** 7/9 matched
+- **Missing functions:** `write_ansi`, `write_str`
+- **Types:** 4/5 matched (target 4)
 - **Missing types:** `Adapter`
 
 ### 2. event
@@ -91,7 +91,7 @@ Every matched file is listed below with function and type symbol parity.
 - **Similarity:** 0.00
 - **Dependents:** 0
 - **Priority Score:** 171710.0
-- **Functions:** 0/14 matched (target 3)
+- **Functions:** 0/14 matched (target 5)
 - **Missing functions:** `write`, `flush`, `write_ansi`, `test_queue_one`, `test_queue_many`, `test_queue_trailing_comma`, `test_execute_one`, `test_execute_many`, `test_execute_trailing_comma`, `new`, `execute_winapi`, `test_harness`, `test_queue_some`, `test_many_queues`
 - **Types:** 0/3 matched (target 0)
 - **Missing types:** `FakeWrite`, `FakeCommand`, `WindowsEventStream`
@@ -336,16 +336,6 @@ For each file to be considered "complete":
 - Documentation ported
 - port-lint header present
 
-## Next Commands
-
-```bash
-# Initialize task queue for systematic porting
-cd tools/ast_distance
-./ast_distance --init-tasks ../../src rust ../../commonMain/src kotlin tasks.json ../../AGENTS.md
-
-# Get next high-priority task
-./ast_distance --assign tasks.json <agent-id>
-```
 ## Reexport / Wiring Modules
 
 These files match `reexport_modules` patterns in `.ast_distance_config.json`. They are filtered out of
