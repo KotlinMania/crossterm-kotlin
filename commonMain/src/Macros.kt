@@ -108,3 +108,25 @@ fun osc(sequence: String): String = "$OSC$sequence$ST"
  * ```
  */
 fun oscBel(sequence: String): String = "$OSC$sequence$BEL"
+
+/**
+ * Queues one or more commands for later execution against [writer].
+ *
+ * Queued commands must be flushed to the underlying output before their
+ * terminal effects are visible.
+ */
+fun queue(writer: QueueableCommand, vararg commands: Command): QueueableCommand {
+    for (command in commands) {
+        writer.queue(command)
+    }
+    return writer
+}
+
+/**
+ * Queues one or more commands against [writer], then flushes the writer.
+ */
+fun execute(writer: ExecutableCommand, vararg commands: Command): ExecutableCommand {
+    queue(writer, *commands)
+    writer.flush()
+    return writer
+}
