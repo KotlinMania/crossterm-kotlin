@@ -5,10 +5,12 @@ import kotlinx.cinterop.CValuesRef
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.addressOf
 import kotlinx.cinterop.usePinned
+import kotlin.native.SymbolName
 import platform.posix.ssize_t
 
 // External declaration to work around different size_t types on different Android Native platforms
 @OptIn(ExperimentalForeignApi::class)
+@SymbolName("read")
 internal external fun read(__fd: Int, __buf: CValuesRef<*>?, __nbytes: ULong): ssize_t
 
 /**
