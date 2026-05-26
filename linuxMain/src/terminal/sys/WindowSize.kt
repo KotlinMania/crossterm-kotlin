@@ -1,4 +1,6 @@
-// port-lint: ignore
+// port-lint: source terminal/sys/unix.rs
+@file:OptIn(kotlinx.cinterop.UnsafeNumber::class)
+
 package io.github.kotlinmania.crossterm.terminal.sys
 
 import io.github.kotlinmania.crossterm.terminal.WindowSize

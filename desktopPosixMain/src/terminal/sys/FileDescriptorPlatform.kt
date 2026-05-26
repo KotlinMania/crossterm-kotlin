@@ -1,4 +1,4 @@
-// port-lint: ignore
+// port-lint: source terminal/sys/file_descriptor.rs
 package io.github.kotlinmania.crossterm.terminal.sys
 
 import kotlinx.cinterop.ExperimentalForeignApi
