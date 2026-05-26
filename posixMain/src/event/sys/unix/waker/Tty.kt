@@ -1,5 +1,5 @@
 // port-lint: source event/sys/unix/waker/tty.rs
-@file:OptIn(kotlin.experimental.ExperimentalObjCRefinement::class)
+@file:OptIn(kotlin.experimental.ExperimentalObjCRefinement::class, kotlinx.cinterop.UnsafeNumber::class)
 
 package io.github.kotlinmania.crossterm.event.sys.unix.waker
 

@@ -1,5 +1,5 @@
 // port-lint: source event/source/unix/mio.rs
-@file:OptIn(kotlin.experimental.ExperimentalObjCRefinement::class)
+@file:OptIn(kotlin.experimental.ExperimentalObjCRefinement::class, kotlinx.cinterop.UnsafeNumber::class)
 
 package io.github.kotlinmania.crossterm.event.source.unix
 
@@ -327,7 +327,6 @@ class MioInternalEventSource private constructor(
      *
      * @return The waker, or null if wake support is not available.
      */
-    @HiddenFromObjC
     override fun waker(): Waker? = mioWaker?.let { waker ->
         // Adapter from MioWaker to source.Waker
         object : Waker {

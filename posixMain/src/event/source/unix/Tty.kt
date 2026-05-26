@@ -1,5 +1,5 @@
 // port-lint: source event/source/unix/tty.rs
-@file:OptIn(kotlin.experimental.ExperimentalObjCRefinement::class)
+@file:OptIn(kotlin.experimental.ExperimentalObjCRefinement::class, kotlinx.cinterop.UnsafeNumber::class)
 
 package io.github.kotlinmania.crossterm.event.source.unix
 
@@ -281,7 +281,6 @@ class TtyInternalEventSource private constructor(
      *
      * @return A [Waker] instance for this event source, or null if waking is not supported.
      */
-    @HiddenFromObjC
     override fun waker(): Waker? = wakePipe?.waker?.let { tw ->
         // Adapter from TtyWaker (event.Waker) to source.Waker
         object : Waker {

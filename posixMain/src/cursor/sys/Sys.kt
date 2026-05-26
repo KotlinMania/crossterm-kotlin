@@ -1,5 +1,5 @@
 // port-lint: source cursor/sys/unix.rs
-@file:OptIn(kotlin.experimental.ExperimentalObjCRefinement::class)
+@file:OptIn(kotlin.experimental.ExperimentalObjCRefinement::class, kotlinx.cinterop.UnsafeNumber::class)
 
 package io.github.kotlinmania.crossterm.cursor.sys
 
