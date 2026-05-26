@@ -1,4 +1,6 @@
 // port-lint: source terminal/sys/unix.rs
+@file:OptIn(kotlin.experimental.ExperimentalObjCRefinement::class, kotlinx.cinterop.UnsafeNumber::class)
+
 package io.github.kotlinmania.crossterm.terminal.sys
 
 import kotlinx.cinterop.ExperimentalForeignApi

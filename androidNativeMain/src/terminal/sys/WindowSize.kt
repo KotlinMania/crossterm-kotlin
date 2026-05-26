@@ -1,4 +1,4 @@
-// port-lint: ignore
+// port-lint: source terminal/sys/unix.rs
 package io.github.kotlinmania.crossterm.terminal.sys
 
 import io.github.kotlinmania.crossterm.terminal.WindowSize

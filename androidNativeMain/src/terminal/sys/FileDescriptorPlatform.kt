@@ -1,4 +1,6 @@
-// port-lint: ignore
+// port-lint: source terminal/sys/file_descriptor.rs
+@file:OptIn(kotlinx.cinterop.UnsafeNumber::class)
+
 package io.github.kotlinmania.crossterm.terminal.sys
 
 import kotlinx.cinterop.ExperimentalForeignApi
