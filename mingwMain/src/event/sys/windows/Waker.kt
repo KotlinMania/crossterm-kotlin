@@ -1,6 +1,10 @@
 // port-lint: source event/sys/windows/waker.rs
-@file:OptIn(kotlinx.cinterop.ExperimentalForeignApi::class)
+@file:OptIn(kotlinx.cinterop.ExperimentalForeignApi::class, kotlin.experimental.ExperimentalObjCRefinement::class)
+
 package io.github.kotlinmania.crossterm.event.sys.windows
+
+import kotlin.experimental.ExperimentalObjCRefinement
+import kotlin.native.HiddenFromObjC
 
 import kotlinx.atomicfu.locks.ReentrantLock
 import kotlinx.atomicfu.locks.withLock
@@ -16,6 +20,7 @@ import platform.windows.ReleaseSemaphore
  * handle should be passed to WaitForMultipleObjects along with the console
  * input handle.
  */
+@HiddenFromObjC
 class Waker private constructor(
     private var semaphore: Semaphore
 ) : io.github.kotlinmania.crossterm.event.sys.Waker {

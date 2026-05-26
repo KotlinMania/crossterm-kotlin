@@ -27,9 +27,9 @@ class EventTest {
 
     @Test
     fun keycodeDisplay() {
-        assertEquals(keyCodeBackspaceDisplayName(), KeyCode.Backspace.toString())
-        assertEquals(keyCodeDeleteDisplayName(), KeyCode.Delete.toString())
-        assertEquals(keyCodeEnterDisplayName(), KeyCode.Enter.toString())
+        assertEquals(KEY_CODE_BACKSPACE_DISPLAY_NAME, KeyCode.Backspace.toString())
+        assertEquals(KEY_CODE_DELETE_DISPLAY_NAME, KeyCode.Delete.toString())
+        assertEquals(KEY_CODE_ENTER_DISPLAY_NAME, KeyCode.Enter.toString())
 
         assertEquals("Left", KeyCode.Left.toString())
         assertEquals("Right", KeyCode.Right.toString())
@@ -83,12 +83,12 @@ class EventTest {
         assertEquals("Right Meta", KeyCode.Modifier(ModifierKeyCode.RightMeta).toString())
         assertEquals("Iso Level 3 Shift", KeyCode.Modifier(ModifierKeyCode.IsoLevel3Shift).toString())
         assertEquals("Iso Level 5 Shift", KeyCode.Modifier(ModifierKeyCode.IsoLevel5Shift).toString())
-        assertEquals(modifierKeyCodeLeftControlDisplayName(), KeyCode.Modifier(ModifierKeyCode.LeftControl).toString())
-        assertEquals(modifierKeyCodeLeftAltDisplayName(), KeyCode.Modifier(ModifierKeyCode.LeftAlt).toString())
-        assertEquals(modifierKeyCodeLeftSuperDisplayName(), KeyCode.Modifier(ModifierKeyCode.LeftSuper).toString())
-        assertEquals(modifierKeyCodeRightControlDisplayName(), KeyCode.Modifier(ModifierKeyCode.RightControl).toString())
-        assertEquals(modifierKeyCodeRightAltDisplayName(), KeyCode.Modifier(ModifierKeyCode.RightAlt).toString())
-        assertEquals(modifierKeyCodeRightSuperDisplayName(), KeyCode.Modifier(ModifierKeyCode.RightSuper).toString())
+        assertEquals(MODIFIER_KEY_CODE_LEFT_CONTROL_DISPLAY_NAME, KeyCode.Modifier(ModifierKeyCode.LeftControl).toString())
+        assertEquals(MODIFIER_KEY_CODE_LEFT_ALT_DISPLAY_NAME, KeyCode.Modifier(ModifierKeyCode.LeftAlt).toString())
+        assertEquals(MODIFIER_KEY_CODE_LEFT_SUPER_DISPLAY_NAME, KeyCode.Modifier(ModifierKeyCode.LeftSuper).toString())
+        assertEquals(MODIFIER_KEY_CODE_RIGHT_CONTROL_DISPLAY_NAME, KeyCode.Modifier(ModifierKeyCode.RightControl).toString())
+        assertEquals(MODIFIER_KEY_CODE_RIGHT_ALT_DISPLAY_NAME, KeyCode.Modifier(ModifierKeyCode.RightAlt).toString())
+        assertEquals(MODIFIER_KEY_CODE_RIGHT_SUPER_DISPLAY_NAME, KeyCode.Modifier(ModifierKeyCode.RightSuper).toString())
     }
 
     @Test
@@ -97,8 +97,8 @@ class EventTest {
 
         val expected = listOf(
             "Shift",
-            keyModifiersControlDisplayName(),
-            keyModifiersAltDisplayName()
+            KEY_MODIFIERS_CONTROL_DISPLAY_NAME,
+            KEY_MODIFIERS_ALT_DISPLAY_NAME
         ).joinToString("+")
         assertEquals(expected, modifiers.toString())
     }

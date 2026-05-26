@@ -1,7 +1,11 @@
 // port-lint: source terminal/sys/windows.rs
+@file:OptIn(kotlinx.cinterop.ExperimentalForeignApi::class, kotlin.experimental.ExperimentalObjCRefinement::class)
+
 package io.github.kotlinmania.crossterm.terminal.sys
 
 import io.github.kotlinmania.crossterm.terminal.WindowSize
+import kotlin.experimental.ExperimentalObjCRefinement
+import kotlin.native.HiddenFromObjC
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.alloc
 import kotlinx.cinterop.memScoped
@@ -126,7 +130,8 @@ actual fun disableRawMode() {
  * @return A pair of (columns, rows)
  * @throws IllegalStateException if the terminal size cannot be determined
  */
-@OptIn(ExperimentalForeignApi::class)
+@OptIn(ExperimentalForeignApi::class, ExperimentalObjCRefinement::class)
+@HiddenFromObjC
 actual fun size(): Pair<UShort, UShort> {
     memScoped {
         val handle = GetStdHandle(STD_OUTPUT_HANDLE)

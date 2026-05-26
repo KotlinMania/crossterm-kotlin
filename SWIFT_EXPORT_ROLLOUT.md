@@ -1174,6 +1174,137 @@ a single PR ahead of CI evidence):
 
 ---
 
+## Gaps discovered during the crossterm-kotlin port (2026-05-26)
+
+Three previously undocumented issues surfaced during the crossterm-kotlin
+Swift Export rollout that are general enough to hit other repos. All
+three produced hard link failures (`ld: symbol(s) not found for
+architecture arm64`) rather than compiler warnings, making them
+impossible to miss — but also impossible to diagnose from the Swift
+side alone.
+
+### 9. Public `internal expect fun` symbols leak into the Swift Export bridge
+
+**Symptom.** `swift test` link fails with `Undefined symbols for
+architecture arm64: _io_github_kotlinmania_<pkg>_<symbol>` for a
+function that *is* declared `internal` in commonMain but is also the
+`actual` implementation of an `expect fun` that was itself `internal`.
+
+**Root cause.** When commonMain declares `internal expect fun foo()` and
+a platform source set provides `internal actual fun foo()`, the Kotlin
+Swift Export plugin may still generate an `@ExportedBridge` entry for
+the symbol because the `expect`/`actual` mechanism creates a public
+entry point during metadata compilation even though the original
+declaration is `internal`. The macOS native binary then doesn't export
+the symbol (it's truly internal), and the bridge reference dangles.
+
+**Fix.** Make the function truly invisible to the bridge by ensuring it
+doesn't participate in the exported surface. For utility functions that
+only exist as internal implementation details (like `getTtyFd()` which
+returns a raw fd for termios calls), the fix was to remove `expect`
+entirely and make the function a plain `internal fun` in the platform
+source set that needs it. The function was never part of the public API
+— it was only `expect` so that multiple platform source sets could share
+the signature, but since each platform that calls it already has its
+own copy, the `expect` was unnecessary overhead that leaked into the
+bridge.
+
+```kotlin
+// BEFORE (leaks into bridge):
+// commonMain:
+internal expect fun getTtyFd(): Int
+
+// posixMain:
+internal actual fun getTtyFd(): Int { ... }
+
+// AFTER (no bridge leak, no expect needed):
+// posixMain only (no commonMain declaration):
+internal fun getTtyFd(): Int { ... }
+```
+
+**When to use this fix.** Only for `internal expect fun` declarations
+where every platform actual is already in a source set that's a
+dependency of the Apple target. If the `expect` exists so that
+`otherMain` / `jvmMain` / `wasmJsMain` can provide a no-op or
+JVM-specific actual, you still need the `expect`/`actual` pair — but
+consider whether the function should be `@HiddenFromObjC` instead.
+
+### 10. JVM class name clashes between commonMain and platform source sets
+
+**Symptom.** `compileAndroidMain` (or `jvmMainClasses`) fails with:
+
+```
+Duplicate JVM class name 'io/github/kotlinmania/<pkg>/FooKt'
+generated from: FooKt, FooKt
+```
+
+**Root cause.** Kotlin compiles each source set's top-level functions
+into a class named after the source file (`Foo.kt` → `FooKt`). When
+`commonMain/src/Foo.kt` defines `expect fun bar()` and
+`jvmMain/src/Foo.kt` defines `actual fun bar()`, both compile to
+`FooKt.class` on JVM targets. The JVM class loader can't resolve which
+one to use.
+
+This is a JVM-only issue — Kotlin/Native and Kotlin/JS don't have this
+problem because they don't use the same class-file naming scheme. But
+androidMain, jvmMain, and any JVM-based source set all hit it.
+
+**Fix (three options, pick one).**
+
+1. **Rename the platform-actual file** (cleanest, recommended). The
+   actual-implementation file gets a descriptive name that reflects what
+   it contains, not the same name as the commonMain expect file:
+
+   ```kotlin
+   // commonMain/src/AnsiSupport.kt → defines expect fun enableVtProcessing()
+   // jvmMain/src/VtProcessing.kt   → defines actual fun enableVtProcessing()
+   // androidMain/src/VtProcessing.kt → defines actual fun enableVtProcessing()
+   ```
+
+   The JVM class names become `AnsiSupportKt` (commonMain) and
+   `VtProcessingKt` (jvmMain + androidMain) — no clash.
+
+2. **`@file:JvmName("DistinctName")`** on one of the files. Adds an
+   annotation but keeps filenames the same. Works but adds noise to
+   every file that shares a basename with its commonMain counterpart.
+
+3. **`@file:JvmMultifileClass`** to merge into a shared class. Useful
+   when multiple platform files contribute to the same logical
+   namespace, but changes the API surface for Java interop consumers.
+
+**Prevention.** After porting `expect`/`actual` declarations, check
+for JVM class name clashes by compiling `compileAndroidMain` or
+`jvmMainClasses` before declaring victory.
+
+### 11. Display name constants (`internal const val`) referenced as
+     function calls in test files
+
+**Symptom.** `compileTestKotlin<Platform>` fails with `Unresolved
+reference 'keyCodeBackspaceDisplayName'` (or similar).
+
+**Root cause.** When `expect fun keyCodeBackspaceDisplayName(): String`
+ declarations across all platform source sets are consolidated into
+ `internal const val KEY_CODE_BACKSPACE_DISPLAY_NAME: String = "Backspace"`
+ in commonMain (part of reducing the expect surface), the test files
+ still reference them as function calls: `keyCodeBackspaceDisplayName()`.
+ The `const val` form is not callable — it's a value, not a function.
+
+**Fix.** Update test files to reference the constant directly:
+
+```kotlin
+// BEFORE (function call syntax from the expect fun era):
+assertEquals(keyCodeBackspaceDisplayName(), KeyCode.Backspace.toString())
+
+// AFTER (constant reference):
+assertEquals(KEY_CODE_BACKSPACE_DISPLAY_NAME, KeyCode.Backspace.toString())
+```
+
+Since these are `internal` constants in the same module, `commonTest`
+can access them. The naming convention stays SCREAMING_SNAKE_CASE for
+constants per Kotlin convention.
+
+---
+
 ## Why the recipe is in every repo
 
 Two reasons:

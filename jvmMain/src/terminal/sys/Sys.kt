@@ -1,21 +1,15 @@
-// port-lint: source terminal/sys/unix.rs
-@file:OptIn(kotlin.experimental.ExperimentalObjCRefinement::class, kotlinx.cinterop.ExperimentalForeignApi::class)
-
 package io.github.kotlinmania.crossterm.terminal.sys
 
-import kotlin.native.HiddenFromObjC
-
 actual fun enableRawMode() {
-    throw UnsupportedOperationException("Raw mode is not supported on this platform")
+    throw UnsupportedOperationException("Raw mode is not supported on JVM")
 }
 
 actual fun disableRawMode() {
-    throw UnsupportedOperationException("Raw mode is not supported on this platform")
+    throw UnsupportedOperationException("Raw mode is not supported on JVM")
 }
 
 actual fun isRawModeEnabled(): Boolean = false
 
-@HiddenFromObjC
 actual fun size(): Pair<UShort, UShort> {
     throw UnsupportedOperationException("The terminal size could not be retrieved")
 }

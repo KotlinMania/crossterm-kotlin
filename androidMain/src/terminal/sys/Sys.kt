@@ -1,14 +1,21 @@
-// port-lint: source terminal/sys.rs
 package io.github.kotlinmania.crossterm.terminal.sys
 
-import io.github.kotlinmania.crossterm.terminal.WindowSize
+actual fun enableRawMode() {
+    throw UnsupportedOperationException("Raw mode is not supported on this platform")
+}
 
-private fun unsupported(): Nothing =
-    throw IllegalStateException("Terminal operations are not supported on Android targets")
+actual fun disableRawMode() {
+    throw UnsupportedOperationException("Raw mode is not supported on this platform")
+}
 
-actual fun enableRawMode(): Unit = unsupported()
-actual fun disableRawMode(): Unit = unsupported()
-actual fun isRawModeEnabled(): Boolean = unsupported()
-actual fun size(): Pair<UShort, UShort> = unsupported()
-actual fun windowSize(): WindowSize = unsupported()
+actual fun isRawModeEnabled(): Boolean = false
+
+actual fun size(): Pair<UShort, UShort> {
+    throw UnsupportedOperationException("The terminal size could not be retrieved")
+}
+
+actual fun windowSize(): io.github.kotlinmania.crossterm.terminal.WindowSize {
+    throw UnsupportedOperationException("The terminal window size could not be retrieved")
+}
+
 actual fun supportsKeyboardEnhancement(): Boolean = false

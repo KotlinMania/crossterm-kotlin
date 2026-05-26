@@ -358,21 +358,20 @@ sealed class Event {
     }
 }
 
-// Kotlin Multiplatform uses `expect`/`actual` as the closest analogue of Rust cfg blocks.
-internal expect fun keyCodeBackspaceDisplayName(): String
-internal expect fun keyCodeDeleteDisplayName(): String
-internal expect fun keyCodeEnterDisplayName(): String
+internal const val KEY_CODE_BACKSPACE_DISPLAY_NAME: String = "Backspace"
+internal const val KEY_CODE_DELETE_DISPLAY_NAME: String = "Del"
+internal const val KEY_CODE_ENTER_DISPLAY_NAME: String = "Enter"
 
-internal expect fun keyModifiersControlDisplayName(): String
-internal expect fun keyModifiersAltDisplayName(): String
-internal expect fun keyModifiersSuperDisplayName(): String
+internal const val KEY_MODIFIERS_CONTROL_DISPLAY_NAME: String = "Control"
+internal const val KEY_MODIFIERS_ALT_DISPLAY_NAME: String = "Alt"
+internal const val KEY_MODIFIERS_SUPER_DISPLAY_NAME: String = "Super"
 
-internal expect fun modifierKeyCodeLeftControlDisplayName(): String
-internal expect fun modifierKeyCodeLeftAltDisplayName(): String
-internal expect fun modifierKeyCodeLeftSuperDisplayName(): String
-internal expect fun modifierKeyCodeRightControlDisplayName(): String
-internal expect fun modifierKeyCodeRightAltDisplayName(): String
-internal expect fun modifierKeyCodeRightSuperDisplayName(): String
+internal const val MODIFIER_KEY_CODE_LEFT_CONTROL_DISPLAY_NAME: String = "Left Ctrl"
+internal const val MODIFIER_KEY_CODE_LEFT_ALT_DISPLAY_NAME: String = "Left Alt"
+internal const val MODIFIER_KEY_CODE_LEFT_SUPER_DISPLAY_NAME: String = "Left Super"
+internal const val MODIFIER_KEY_CODE_RIGHT_CONTROL_DISPLAY_NAME: String = "Right Ctrl"
+internal const val MODIFIER_KEY_CODE_RIGHT_ALT_DISPLAY_NAME: String = "Right Alt"
+internal const val MODIFIER_KEY_CODE_RIGHT_SUPER_DISPLAY_NAME: String = "Right Super"
 
 /**
  * Represents a key event.
@@ -552,8 +551,8 @@ sealed class KeyCode {
 
     override fun toString(): String =
         when (this) {
-            Backspace -> keyCodeBackspaceDisplayName()
-            Enter -> keyCodeEnterDisplayName()
+            Backspace -> KEY_CODE_BACKSPACE_DISPLAY_NAME
+            Enter -> KEY_CODE_ENTER_DISPLAY_NAME
             Left -> "Left"
             Right -> "Right"
             Up -> "Up"
@@ -564,7 +563,7 @@ sealed class KeyCode {
             PageDown -> "Page Down"
             Tab -> "Tab"
             BackTab -> "Back Tab"
-            Delete -> keyCodeDeleteDisplayName()
+            Delete -> KEY_CODE_DELETE_DISPLAY_NAME
             Insert -> "Insert"
             Esc -> "Esc"
             CapsLock -> "Caps Lock"
@@ -612,13 +611,13 @@ data class KeyModifiers(val bits: UByte) {
             parts.add("Shift")
         }
         if (contains(CONTROL)) {
-            parts.add(keyModifiersControlDisplayName())
+            parts.add(KEY_MODIFIERS_CONTROL_DISPLAY_NAME)
         }
         if (contains(ALT)) {
-            parts.add(keyModifiersAltDisplayName())
+            parts.add(KEY_MODIFIERS_ALT_DISPLAY_NAME)
         }
         if (contains(SUPER)) {
-            parts.add(keyModifiersSuperDisplayName())
+            parts.add(KEY_MODIFIERS_SUPER_DISPLAY_NAME)
         }
         if (contains(HYPER)) {
             parts.add("Hyper")
@@ -720,12 +719,12 @@ enum class ModifierKeyCode {
             RightMeta -> "Right Meta"
             IsoLevel3Shift -> "Iso Level 3 Shift"
             IsoLevel5Shift -> "Iso Level 5 Shift"
-            LeftControl -> modifierKeyCodeLeftControlDisplayName()
-            LeftAlt -> modifierKeyCodeLeftAltDisplayName()
-            LeftSuper -> modifierKeyCodeLeftSuperDisplayName()
-            RightControl -> modifierKeyCodeRightControlDisplayName()
-            RightAlt -> modifierKeyCodeRightAltDisplayName()
-            RightSuper -> modifierKeyCodeRightSuperDisplayName()
+            LeftControl -> MODIFIER_KEY_CODE_LEFT_CONTROL_DISPLAY_NAME
+            LeftAlt -> MODIFIER_KEY_CODE_LEFT_ALT_DISPLAY_NAME
+            LeftSuper -> MODIFIER_KEY_CODE_LEFT_SUPER_DISPLAY_NAME
+            RightControl -> MODIFIER_KEY_CODE_RIGHT_CONTROL_DISPLAY_NAME
+            RightAlt -> MODIFIER_KEY_CODE_RIGHT_ALT_DISPLAY_NAME
+            RightSuper -> MODIFIER_KEY_CODE_RIGHT_SUPER_DISPLAY_NAME
         }
 }
 
