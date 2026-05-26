@@ -249,7 +249,7 @@ License - see the [LICENSE](https://github.com/crossterm-rs/crossterm/blob/maste
 
 ```kotlin
 dependencies {
-    implementation("io.github.kotlinmania:crossterm-kotlin:0.1.4")
+    implementation("io.github.kotlinmania:crossterm-kotlin:0.1.5")
 }
 ```
 
