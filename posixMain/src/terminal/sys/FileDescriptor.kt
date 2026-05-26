@@ -89,3 +89,22 @@ fun ttyFd(): FileDesc {
         FileDesc.new(fd, closeOnDrop = true)
     }
 }
+
+/**
+ * Returns the raw file descriptor for the TTY (stdin or /dev/tty).
+ *
+ * This is equivalent to [ttyFd] but returns just the integer fd
+ * without the [FileDesc] wrapper, for use in termios calls.
+ */
+@OptIn(ExperimentalForeignApi::class)
+internal fun getTtyFd(): Int {
+    return if (isatty(STDIN_FILENO) == 1) {
+        STDIN_FILENO
+    } else {
+        val fd = open("/dev/tty", O_RDWR)
+        if (fd < 0) {
+            throw IllegalStateException("Failed to open /dev/tty")
+        }
+        fd
+    }
+}

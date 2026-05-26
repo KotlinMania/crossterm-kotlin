@@ -307,6 +307,10 @@ kotlin {
             kotlin.srcDir("otherMain/src")
             dependsOn(commonMain)
         }
+        val jvmMain by getting {
+            kotlin.srcDir("jvmMain/src")
+            dependsOn(otherMain)
+        }
         val androidMain by getting {
             kotlin.srcDir("androidMain/src")
             dependsOn(otherMain)
