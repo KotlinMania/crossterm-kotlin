@@ -1,4 +1,6 @@
 // port-lint: source event.rs
+@file:OptIn(kotlin.experimental.ExperimentalObjCRefinement::class)
+
 /**
  * # Event
  *
@@ -53,6 +55,7 @@ package io.github.kotlinmania.crossterm.event
 
 import io.github.kotlinmania.crossterm.Command
 import io.github.kotlinmania.crossterm.csi
+import kotlin.native.HiddenFromObjC
 import kotlin.time.Duration
 
 /**
@@ -93,6 +96,7 @@ data class KeyboardEnhancementFlags(val bits: UByte) {
         fun empty(): KeyboardEnhancementFlags = NONE
     }
 
+    @HiddenFromObjC
     fun bits(): UByte = bits
 
     operator fun plus(other: KeyboardEnhancementFlags): KeyboardEnhancementFlags =
@@ -347,6 +351,7 @@ sealed class Event {
      * This is a convenience method that makes code which only cares about resize events easier to
      * write.
      */
+    @HiddenFromObjC
     fun asResizeEvent(): Pair<UShort, UShort>? = when (this) {
         is Resize -> Pair(columns, rows)
         else -> null
@@ -536,6 +541,7 @@ sealed class KeyCode {
     fun isChar(c: kotlin.Char): Boolean = this is Char && char == c
 
     /** Returns the character if this is a Char, otherwise null */
+    @HiddenFromObjC
     fun asChar(): kotlin.Char? = (this as? Char)?.char
 
     /** Returns true if this is the given media key. */

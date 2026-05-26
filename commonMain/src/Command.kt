@@ -1,8 +1,11 @@
 // port-lint: source command.rs
+@file:OptIn(kotlin.experimental.ExperimentalObjCRefinement::class)
+
 package io.github.kotlinmania.crossterm
 
 import io.github.kotlinmania.crossterm.terminal.BeginSynchronizedUpdate
 import io.github.kotlinmania.crossterm.terminal.EndSynchronizedUpdate
+import kotlin.native.HiddenFromObjC
 
 /**
  * An interface for a command that performs an action on the terminal.
@@ -210,6 +213,7 @@ interface SynchronizedUpdate : ExecutableCommand {
      * screen buffer state again, effectively avoiding the tearing effect by unintentionally
      * rendering in the middle of an application screen update.
      */
+    @HiddenFromObjC
     fun <T> syncUpdate(operations: (SynchronizedUpdate) -> T): T {
         queue(BeginSynchronizedUpdate)
         val result = operations(this)

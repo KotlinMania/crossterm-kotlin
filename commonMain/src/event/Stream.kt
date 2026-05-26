@@ -1,4 +1,6 @@
 // port-lint: source event/stream.rs
+@file:OptIn(kotlin.experimental.ExperimentalObjCRefinement::class)
+
 package io.github.kotlinmania.crossterm.event
 
 import io.github.kotlinmania.crossterm.event.sys.Waker
@@ -12,6 +14,7 @@ import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlin.native.HiddenFromObjC
 import kotlin.time.Duration
 
 /**
@@ -92,6 +95,7 @@ class EventStream private constructor() {
      *
      * @return A [Flow] that emits [Result]<[Event]> values.
      */
+    @HiddenFromObjC
     fun asFlow(): Flow<Result<Event>> = callbackFlow {
         // Initialize the waker from the event reader
         pollInternalWaker = try {
@@ -210,6 +214,7 @@ private val POLL_TIMEOUT = Duration.parse("PT0.1S") // 100ms
  *
  * @return A [Flow] that emits [Result]<[Event]> values.
  */
+@HiddenFromObjC
 fun eventStream(): Flow<Result<Event>> = EventStream.new().asFlow()
 
 /**
@@ -236,6 +241,7 @@ fun eventStream(): Flow<Result<Event>> = EventStream.new().asFlow()
  *
  * @return A [Flow] that emits [Event] values, filtering out errors.
  */
+@HiddenFromObjC
 suspend fun events(): Flow<Event> = withContext(Dispatchers.Default) {
     kotlinx.coroutines.flow.flow {
         eventStream().collect { result ->

@@ -1,8 +1,11 @@
 // port-lint: source style/stylize.rs
+@file:OptIn(kotlin.experimental.ExperimentalObjCRefinement::class)
+
 package io.github.kotlinmania.crossterm.style
 
 import io.github.kotlinmania.crossterm.style.types.Attribute
 import io.github.kotlinmania.crossterm.style.types.Color
+import kotlin.native.HiddenFromObjC
 
 /**
  * Provides a set of methods to set attributes and colors.
@@ -20,6 +23,7 @@ import io.github.kotlinmania.crossterm.style.types.Color
  * println("Red on blue".red().onBlue())
  * ```
  */
+@HiddenFromObjC
 interface Stylize<S : Stylize<S>> {
     /**
      * Styles this type.

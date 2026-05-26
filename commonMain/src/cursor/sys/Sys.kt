@@ -1,5 +1,9 @@
 // port-lint: source cursor/sys.rs
+@file:OptIn(kotlin.experimental.ExperimentalObjCRefinement::class)
+
 package io.github.kotlinmania.crossterm.cursor.sys
+
+import kotlin.native.HiddenFromObjC
 
 /**
  * This module provides platform-related cursor functions.
@@ -37,6 +41,7 @@ package io.github.kotlinmania.crossterm.cursor.sys
  * @return A pair containing (column, row) coordinates of the cursor.
  * @throws Exception if the cursor position cannot be determined.
  */
+@HiddenFromObjC
 expect fun position(): Pair<UShort, UShort>
 
 /**

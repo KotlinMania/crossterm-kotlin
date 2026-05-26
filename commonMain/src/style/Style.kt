@@ -1,4 +1,6 @@
 // port-lint: source style.rs
+@file:OptIn(kotlin.experimental.ExperimentalObjCRefinement::class)
+
 package io.github.kotlinmania.crossterm.style
 
 import io.github.kotlinmania.crossterm.AnsiSupport
@@ -10,12 +12,14 @@ import io.github.kotlinmania.crossterm.style.types.Color
 import io.github.kotlinmania.crossterm.style.types.Colored
 import io.github.kotlinmania.crossterm.style.types.Colors
 import io.github.kotlinmania.crossterm.style.types.getEnvironmentVariable
+import kotlin.native.HiddenFromObjC
 
 /**
  * Creates a [StyledContent].
  *
  * This could be used to style any type by applying colors and text attributes.
  */
+@HiddenFromObjC
 fun <D> style(value: D): StyledContent<D> = ContentStyle.new().apply(value)
 
 /**
@@ -153,6 +157,7 @@ data class SetStyle(val style: ContentStyle) : Command {
 /**
  * A command that prints styled content.
  */
+@HiddenFromObjC
 data class PrintStyledContent<D>(val styledContent: StyledContent<D>) : Command {
     override fun writeAnsi(writer: Appendable) {
         val style = styledContent.style()
@@ -209,6 +214,7 @@ data object ResetColor : Command {
 /**
  * A command that prints the given displayable type.
  */
+@HiddenFromObjC
 data class Print<D>(val value: D) : Command {
     override fun writeAnsi(writer: Appendable) {
         writer.append(value.toString())

@@ -1,8 +1,11 @@
 // port-lint: source terminal.rs
+@file:OptIn(kotlin.experimental.ExperimentalObjCRefinement::class)
+
 package io.github.kotlinmania.crossterm.terminal
 
 import io.github.kotlinmania.crossterm.Command
 import io.github.kotlinmania.crossterm.csi
+import kotlin.native.HiddenFromObjC
 
 /**
  * Tells whether the raw mode is enabled.
@@ -24,6 +27,7 @@ fun disableRawMode() = io.github.kotlinmania.crossterm.terminal.sys.disableRawMo
  *
  * The top left cell is represented `(1, 1)`.
  */
+@HiddenFromObjC
 fun size(): Pair<UShort, UShort> = io.github.kotlinmania.crossterm.terminal.sys.size()
 
 data class WindowSize(
@@ -177,4 +181,3 @@ data object EndSynchronizedUpdate : Command {
         writer.append(csi("?2026l"))
     }
 }
-

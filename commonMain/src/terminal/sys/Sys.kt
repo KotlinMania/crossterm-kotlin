@@ -1,5 +1,9 @@
 // port-lint: source terminal/sys.rs
+@file:OptIn(kotlin.experimental.ExperimentalObjCRefinement::class)
+
 package io.github.kotlinmania.crossterm.terminal.sys
+
+import kotlin.native.HiddenFromObjC
 
 /**
  * This module provides platform-related functions for terminal manipulation.
@@ -53,6 +57,7 @@ expect fun isRawModeEnabled(): Boolean
  * @return A pair of (columns, rows)
  * @throws Exception if the terminal size cannot be determined
  */
+@HiddenFromObjC
 expect fun size(): Pair<UShort, UShort>
 
 /**

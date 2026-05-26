@@ -1,4 +1,6 @@
 // port-lint: source terminal/sys/unix.rs
+@file:OptIn(kotlin.experimental.ExperimentalObjCRefinement::class)
+
 package io.github.kotlinmania.crossterm.terminal.sys
 
 import io.github.kotlinmania.crossterm.terminal.WindowSize
@@ -9,6 +11,7 @@ import platform.posix.isatty
 
 import kotlin.concurrent.atomics.AtomicBoolean
 import kotlin.concurrent.atomics.ExperimentalAtomicApi
+import kotlin.native.HiddenFromObjC
 
 // RTLD_DEFAULT is not available in platform.posix on all platforms.
 // On most POSIX systems, RTLD_DEFAULT is defined as ((void*)0) or similar.
@@ -68,6 +71,7 @@ actual fun isRawModeEnabled(): Boolean {
  * Returns the terminal size as a pair of (columns, rows).
  */
 @OptIn(ExperimentalForeignApi::class)
+@HiddenFromObjC
 actual fun size(): Pair<UShort, UShort> {
     val ws = try {
         windowSize()
