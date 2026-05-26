@@ -1,8 +1,11 @@
 // port-lint: source event/read.rs
+@file:OptIn(kotlin.experimental.ExperimentalObjCRefinement::class)
+
 package io.github.kotlinmania.crossterm.event
 
 import io.github.kotlinmania.crossterm.event.source.EventSource
 import io.github.kotlinmania.crossterm.event.sys.Waker
+import kotlin.native.HiddenFromObjC
 import kotlin.time.Duration
 
 /**
@@ -52,6 +55,7 @@ class InternalEventReader(
      * @return The waker for this reader's event source.
      * @throws IllegalStateException if the reader source is not set.
      */
+    @HiddenFromObjC
     fun waker(): Waker =
         requireNotNull(source?.waker()) { "reader source not set" }
 

@@ -1,4 +1,6 @@
 // port-lint: source cursor/sys/unix.rs
+@file:OptIn(kotlin.experimental.ExperimentalObjCRefinement::class)
+
 package io.github.kotlinmania.crossterm.cursor.sys
 
 import io.github.kotlinmania.crossterm.event.CursorPositionFilter
@@ -15,6 +17,7 @@ import kotlinx.cinterop.usePinned
 import platform.posix.STDOUT_FILENO
 import platform.posix.fflush
 import platform.posix.write
+import kotlin.native.HiddenFromObjC
 import kotlin.time.Duration.Companion.milliseconds
 
 /**
@@ -44,6 +47,7 @@ private fun writeToStdout(str: String) {
  * @throws IllegalStateException if the cursor position cannot be determined.
  */
 @OptIn(ExperimentalForeignApi::class)
+@HiddenFromObjC
 actual fun position(): Pair<UShort, UShort> {
     return if (isRawModeEnabled()) {
         readPositionRaw()

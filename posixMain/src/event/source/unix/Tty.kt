@@ -1,4 +1,6 @@
 // port-lint: source event/source/unix/tty.rs
+@file:OptIn(kotlin.experimental.ExperimentalObjCRefinement::class)
+
 package io.github.kotlinmania.crossterm.event.source.unix
 
 import io.github.kotlinmania.crossterm.event.*
@@ -9,6 +11,7 @@ import io.github.kotlinmania.crossterm.terminal.sys.isRawModeEnabled
 import io.github.kotlinmania.crossterm.terminal.sys.size
 import kotlinx.cinterop.*
 import platform.posix.*
+import kotlin.native.HiddenFromObjC
 import kotlin.time.Duration
 
 /**
@@ -278,6 +281,7 @@ class TtyInternalEventSource private constructor(
      *
      * @return A [Waker] instance for this event source, or null if waking is not supported.
      */
+    @HiddenFromObjC
     override fun waker(): Waker? = wakePipe?.waker?.let { tw ->
         // Adapter from TtyWaker (event.Waker) to source.Waker
         object : Waker {
@@ -387,6 +391,7 @@ private fun registerSigwinchHandler(senderFd: Int) {
  * the waker, indicating that the caller should handle the interruption
  * appropriately (typically by returning null from tryRead).
  */
+@HiddenFromObjC
 class TtyInterruptedException(message: String) : Exception(message)
 
 // ============================================================================

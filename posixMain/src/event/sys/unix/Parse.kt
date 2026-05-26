@@ -1,8 +1,11 @@
 // port-lint: source event/sys/unix/parse.rs
+@file:OptIn(kotlin.experimental.ExperimentalObjCRefinement::class)
+
 package io.github.kotlinmania.crossterm.event.sys.unix
 
 import io.github.kotlinmania.crossterm.event.*
 import io.github.kotlinmania.crossterm.terminal.sys.isRawModeEnabled
+import kotlin.native.HiddenFromObjC
 
 /**
  * Event parsing for Unix terminal input.
@@ -30,6 +33,7 @@ sealed class ParseResult {
 /**
  * Exception thrown when event parsing fails.
  */
+@HiddenFromObjC
 class ParseEventException(message: String = "Could not parse an event.") : Exception(message)
 
 /**

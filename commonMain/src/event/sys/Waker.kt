@@ -1,5 +1,9 @@
 // port-lint: source event/sys.rs
+@file:OptIn(kotlin.experimental.ExperimentalObjCRefinement::class)
+
 package io.github.kotlinmania.crossterm.event.sys
+
+import kotlin.native.HiddenFromObjC
 
 /**
  * Interface for waking up blocked event reading operations.
@@ -10,6 +14,7 @@ package io.github.kotlinmania.crossterm.event.sys
  * Kotlin Multiplatform does not have Rust-style crate feature selection, so each platform provides
  * its own concrete waker implementation. Callers use this interface for the shared `wake()` API.
  */
+@HiddenFromObjC
 interface Waker {
     /**
      * Wakes up any blocked poll/read operation.

@@ -1,4 +1,6 @@
 // port-lint: source event/sys/unix/waker/mio.rs
+@file:OptIn(kotlin.experimental.ExperimentalObjCRefinement::class)
+
 package io.github.kotlinmania.crossterm.event.sys.unix.waker
 
 import io.github.kotlinmania.crossterm.event.sys.Waker
@@ -15,6 +17,7 @@ import kotlinx.cinterop.usePinned
 import platform.posix.close
 import platform.posix.pipe
 import platform.posix.write
+import kotlin.native.HiddenFromObjC
 
 /**
  * Allows waking up a poll operation.
@@ -32,6 +35,7 @@ import platform.posix.write
  * [wake] to be called from any thread.
  */
 @OptIn(ExperimentalForeignApi::class)
+@HiddenFromObjC
 class MioWaker private constructor(
     private val readFd: Int,
     private val writeFd: Int

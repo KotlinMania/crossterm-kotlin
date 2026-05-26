@@ -1,4 +1,6 @@
 // port-lint: source event/sys/unix/waker/tty.rs
+@file:OptIn(kotlin.experimental.ExperimentalObjCRefinement::class)
+
 package io.github.kotlinmania.crossterm.event.sys.unix.waker
 
 import io.github.kotlinmania.crossterm.event.sys.Waker
@@ -9,6 +11,7 @@ import kotlinx.cinterop.addressOf
 import kotlinx.cinterop.convert
 import kotlinx.cinterop.usePinned
 import platform.posix.write
+import kotlin.native.HiddenFromObjC
 
 /**
  * Allows waking up the EventSource's tryRead() method.
@@ -27,6 +30,7 @@ import platform.posix.write
  * @property writerFd The file descriptor for the write end of the Unix socket pair.
  */
 @OptIn(ExperimentalForeignApi::class)
+@HiddenFromObjC
 class TtyWaker private constructor(
     private val writerFd: Int
 ) : Waker {

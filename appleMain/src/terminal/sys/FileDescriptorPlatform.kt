@@ -21,6 +21,8 @@ internal actual fun readFromFd(fd: Int, buffer: ByteArray): Int {
         if (result < 0) {
             throw IllegalStateException("Failed to read from file descriptor: errno=${platform.posix.errno}")
         }
-        result.toInt()
+        ssizeToInt(result)
     }
 }
+
+private fun ssizeToInt(value: Number): Int = value.toInt()

@@ -1,11 +1,15 @@
 // port-lint: source style/styled_content.rs
+@file:OptIn(kotlin.experimental.ExperimentalObjCRefinement::class)
+
 package io.github.kotlinmania.crossterm.style
 
 import io.github.kotlinmania.crossterm.executeFmt
+import kotlin.native.HiddenFromObjC
 
 /**
  * The style with the content to be styled.
  */
+@HiddenFromObjC
 data class StyledContent<D>(
     /** The style (colors, content attributes). */
     private var style: ContentStyle,

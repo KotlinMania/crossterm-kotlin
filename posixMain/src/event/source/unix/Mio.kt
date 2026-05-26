@@ -1,4 +1,6 @@
 // port-lint: source event/source/unix/mio.rs
+@file:OptIn(kotlin.experimental.ExperimentalObjCRefinement::class)
+
 package io.github.kotlinmania.crossterm.event.source.unix
 
 import io.github.kotlinmania.crossterm.event.Event
@@ -33,6 +35,7 @@ import platform.posix.open
 import platform.posix.poll
 import platform.posix.pollfd
 import platform.posix.read
+import kotlin.native.HiddenFromObjC
 import kotlin.time.Duration
 
 /**
@@ -324,6 +327,7 @@ class MioInternalEventSource private constructor(
      *
      * @return The waker, or null if wake support is not available.
      */
+    @HiddenFromObjC
     override fun waker(): Waker? = mioWaker?.let { waker ->
         // Adapter from MioWaker to source.Waker
         object : Waker {
@@ -697,4 +701,5 @@ private fun mioKeyEvent(code: io.github.kotlinmania.crossterm.event.KeyCode): In
  * the waker, indicating that the caller should handle the interruption
  * appropriately (typically by returning null from tryRead).
  */
+@HiddenFromObjC
 class MioInterruptedException(message: String) : Exception(message)

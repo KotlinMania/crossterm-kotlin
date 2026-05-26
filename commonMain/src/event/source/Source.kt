@@ -1,8 +1,11 @@
 // port-lint: source event/source.rs
+@file:OptIn(kotlin.experimental.ExperimentalObjCRefinement::class)
+
 package io.github.kotlinmania.crossterm.event.source
 
 import io.github.kotlinmania.crossterm.event.InternalEvent
 import io.github.kotlinmania.crossterm.event.sys.Waker
+import kotlin.native.HiddenFromObjC
 import kotlin.time.Duration
 
 /**
@@ -37,5 +40,6 @@ interface EventSource {
      *
      * @return A [Waker] instance for this event source, or `null` if waking is not supported.
      */
+    @HiddenFromObjC
     fun waker(): Waker? = null
 }
