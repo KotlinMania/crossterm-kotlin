@@ -1,8 +1,8 @@
 # port-lint Proposed Changes
 
-**Generated:** 2026-05-24
-**Source:** src
-**Target:** commonMain/src
+**Generated:** 2026-05-25
+**Source:** tmp
+**Target:** src/
 
 These are review proposals only. They are emitted when a Rust -> Kotlin pair matches only after fallback normalization, so the existing `port-lint` header is not an exact provenance match.
 
