@@ -1,256 +1,13 @@
 // port-lint: source style/stylize.rs
-@file:OptIn(kotlin.experimental.ExperimentalObjCRefinement::class)
 
 package io.github.kotlinmania.crossterm.style
 
 import io.github.kotlinmania.crossterm.style.types.Attribute
 import io.github.kotlinmania.crossterm.style.types.Color
-import kotlin.native.HiddenFromObjC
 
-/**
- * Provides a set of methods to set attributes and colors.
- *
- * This interface defines a fluent API for styling content with colors and text attributes.
- * Types implementing this interface can be styled using method chaining.
- *
- * Example:
- * ```kotlin
- * import io.github.kotlinmania.crossterm.style.*
- *
- * println("Bold text".bold())
- * println("Underlined text".underlined())
- * println("Negative text".negative())
- * println("Red on blue".red().onBlue())
- * ```
- */
-@HiddenFromObjC
-interface Stylize<S : Stylize<S>> {
-    /**
-     * Styles this type.
-     */
-    fun stylize(): S
-
-    /**
-     * Sets the foreground color.
-     */
-    fun with(color: Color): S
-
-    /**
-     * Sets the background color.
-     */
-    fun on(color: Color): S
-
-    /**
-     * Sets the underline color.
-     */
-    fun underline(color: Color): S
-
-    /**
-     * Styles the content with the attribute.
-     */
-    fun attribute(attr: Attribute): S
-
-    // Attribute methods
-
-    /** Applies the [Attribute.Reset] attribute to the text. */
-    fun reset(): S = attribute(Attribute.Reset)
-
-    /** Applies the [Attribute.Bold] attribute to the text. */
-    fun bold(): S = attribute(Attribute.Bold)
-
-    /** Applies the [Attribute.Underlined] attribute to the text. */
-    fun underlined(): S = attribute(Attribute.Underlined)
-
-    /** Applies the [Attribute.Reverse] attribute to the text. */
-    fun reverse(): S = attribute(Attribute.Reverse)
-
-    /** Applies the [Attribute.Dim] attribute to the text. */
-    fun dim(): S = attribute(Attribute.Dim)
-
-    /** Applies the [Attribute.Italic] attribute to the text. */
-    fun italic(): S = attribute(Attribute.Italic)
-
-    /** Applies the [Attribute.Reverse] attribute to the text. (Alias for reverse) */
-    fun negative(): S = attribute(Attribute.Reverse)
-
-    /** Applies the [Attribute.SlowBlink] attribute to the text. */
-    fun slowBlink(): S = attribute(Attribute.SlowBlink)
-
-    /** Applies the [Attribute.RapidBlink] attribute to the text. */
-    fun rapidBlink(): S = attribute(Attribute.RapidBlink)
-
-    /** Applies the [Attribute.Hidden] attribute to the text. */
-    fun hidden(): S = attribute(Attribute.Hidden)
-
-    /** Applies the [Attribute.CrossedOut] attribute to the text. */
-    fun crossedOut(): S = attribute(Attribute.CrossedOut)
-
-    // Foreground color methods
-
-    /** Sets the foreground color to [Color.Black]. */
-    fun black(): S = with(Color.Black)
-
-    /** Sets the foreground color to [Color.DarkGrey]. */
-    fun darkGrey(): S = with(Color.DarkGrey)
-
-    /** Sets the foreground color to [Color.Red]. */
-    fun red(): S = with(Color.Red)
-
-    /** Sets the foreground color to [Color.DarkRed]. */
-    fun darkRed(): S = with(Color.DarkRed)
-
-    /** Sets the foreground color to [Color.Green]. */
-    fun green(): S = with(Color.Green)
-
-    /** Sets the foreground color to [Color.DarkGreen]. */
-    fun darkGreen(): S = with(Color.DarkGreen)
-
-    /** Sets the foreground color to [Color.Yellow]. */
-    fun yellow(): S = with(Color.Yellow)
-
-    /** Sets the foreground color to [Color.DarkYellow]. */
-    fun darkYellow(): S = with(Color.DarkYellow)
-
-    /** Sets the foreground color to [Color.Blue]. */
-    fun blue(): S = with(Color.Blue)
-
-    /** Sets the foreground color to [Color.DarkBlue]. */
-    fun darkBlue(): S = with(Color.DarkBlue)
-
-    /** Sets the foreground color to [Color.Magenta]. */
-    fun magenta(): S = with(Color.Magenta)
-
-    /** Sets the foreground color to [Color.DarkMagenta]. */
-    fun darkMagenta(): S = with(Color.DarkMagenta)
-
-    /** Sets the foreground color to [Color.Cyan]. */
-    fun cyan(): S = with(Color.Cyan)
-
-    /** Sets the foreground color to [Color.DarkCyan]. */
-    fun darkCyan(): S = with(Color.DarkCyan)
-
-    /** Sets the foreground color to [Color.White]. */
-    fun white(): S = with(Color.White)
-
-    /** Sets the foreground color to [Color.Grey]. */
-    fun grey(): S = with(Color.Grey)
-
-    // Background color methods
-
-    /** Sets the background color to [Color.Black]. */
-    fun onBlack(): S = on(Color.Black)
-
-    /** Sets the background color to [Color.DarkGrey]. */
-    fun onDarkGrey(): S = on(Color.DarkGrey)
-
-    /** Sets the background color to [Color.Red]. */
-    fun onRed(): S = on(Color.Red)
-
-    /** Sets the background color to [Color.DarkRed]. */
-    fun onDarkRed(): S = on(Color.DarkRed)
-
-    /** Sets the background color to [Color.Green]. */
-    fun onGreen(): S = on(Color.Green)
-
-    /** Sets the background color to [Color.DarkGreen]. */
-    fun onDarkGreen(): S = on(Color.DarkGreen)
-
-    /** Sets the background color to [Color.Yellow]. */
-    fun onYellow(): S = on(Color.Yellow)
-
-    /** Sets the background color to [Color.DarkYellow]. */
-    fun onDarkYellow(): S = on(Color.DarkYellow)
-
-    /** Sets the background color to [Color.Blue]. */
-    fun onBlue(): S = on(Color.Blue)
-
-    /** Sets the background color to [Color.DarkBlue]. */
-    fun onDarkBlue(): S = on(Color.DarkBlue)
-
-    /** Sets the background color to [Color.Magenta]. */
-    fun onMagenta(): S = on(Color.Magenta)
-
-    /** Sets the background color to [Color.DarkMagenta]. */
-    fun onDarkMagenta(): S = on(Color.DarkMagenta)
-
-    /** Sets the background color to [Color.Cyan]. */
-    fun onCyan(): S = on(Color.Cyan)
-
-    /** Sets the background color to [Color.DarkCyan]. */
-    fun onDarkCyan(): S = on(Color.DarkCyan)
-
-    /** Sets the background color to [Color.White]. */
-    fun onWhite(): S = on(Color.White)
-
-    /** Sets the background color to [Color.Grey]. */
-    fun onGrey(): S = on(Color.Grey)
-
-    // Underline color methods
-
-    /** Sets the underline color to [Color.Black]. */
-    fun underlineBlack(): S = underline(Color.Black)
-
-    /** Sets the underline color to [Color.DarkGrey]. */
-    fun underlineDarkGrey(): S = underline(Color.DarkGrey)
-
-    /** Sets the underline color to [Color.Red]. */
-    fun underlineRed(): S = underline(Color.Red)
-
-    /** Sets the underline color to [Color.DarkRed]. */
-    fun underlineDarkRed(): S = underline(Color.DarkRed)
-
-    /** Sets the underline color to [Color.Green]. */
-    fun underlineGreen(): S = underline(Color.Green)
-
-    /** Sets the underline color to [Color.DarkGreen]. */
-    fun underlineDarkGreen(): S = underline(Color.DarkGreen)
-
-    /** Sets the underline color to [Color.Yellow]. */
-    fun underlineYellow(): S = underline(Color.Yellow)
-
-    /** Sets the underline color to [Color.DarkYellow]. */
-    fun underlineDarkYellow(): S = underline(Color.DarkYellow)
-
-    /** Sets the underline color to [Color.Blue]. */
-    fun underlineBlue(): S = underline(Color.Blue)
-
-    /** Sets the underline color to [Color.DarkBlue]. */
-    fun underlineDarkBlue(): S = underline(Color.DarkBlue)
-
-    /** Sets the underline color to [Color.Magenta]. */
-    fun underlineMagenta(): S = underline(Color.Magenta)
-
-    /** Sets the underline color to [Color.DarkMagenta]. */
-    fun underlineDarkMagenta(): S = underline(Color.DarkMagenta)
-
-    /** Sets the underline color to [Color.Cyan]. */
-    fun underlineCyan(): S = underline(Color.Cyan)
-
-    /** Sets the underline color to [Color.DarkCyan]. */
-    fun underlineDarkCyan(): S = underline(Color.DarkCyan)
-
-    /** Sets the underline color to [Color.White]. */
-    fun underlineWhite(): S = underline(Color.White)
-
-    /** Sets the underline color to [Color.Grey]. */
-    fun underlineGrey(): S = underline(Color.Grey)
-}
-
-/**
- * Creates a [StyledContent] with the given content.
- * This is a convenience function to start styling content.
- *
- * @param content The content to style.
- * @return A new [StyledContent] with default style.
- */
 // ============================================================================
 // ContentStyle Stylize Extensions
 // ============================================================================
-
-/**
- * Extension function to make [ContentStyle] work with styling methods.
- */
-fun ContentStyle.stylize(): ContentStyle = this
 
 /**
  * Extension function to set foreground color on [ContentStyle].
@@ -474,12 +231,12 @@ fun ContentStyle.underlineGrey(): ContentStyle = underline(Color.Grey)
 /**
  * Extension function to make [StyledContent] work with styling methods.
  */
-fun <D> StyledContent<D>.stylize(): StyledContent<D> = this
+fun StyledContent.stylize(): StyledContent = this
 
 /**
  * Extension function to set foreground color on [StyledContent].
  */
-fun <D> StyledContent<D>.with(color: Color): StyledContent<D> {
+fun StyledContent.with(color: Color): StyledContent {
     val styled = stylize()
     styled.asMut().foregroundColor = color
     return styled
@@ -488,7 +245,7 @@ fun <D> StyledContent<D>.with(color: Color): StyledContent<D> {
 /**
  * Extension function to set background color on [StyledContent].
  */
-fun <D> StyledContent<D>.on(color: Color): StyledContent<D> {
+fun StyledContent.on(color: Color): StyledContent {
     val styled = stylize()
     styled.asMut().backgroundColor = color
     return styled
@@ -497,7 +254,7 @@ fun <D> StyledContent<D>.on(color: Color): StyledContent<D> {
 /**
  * Extension function to set underline color on [StyledContent].
  */
-fun <D> StyledContent<D>.underline(color: Color): StyledContent<D> {
+fun StyledContent.underline(color: Color): StyledContent {
     val styled = stylize()
     styled.asMut().underlineColor = color
     return styled
@@ -506,195 +263,195 @@ fun <D> StyledContent<D>.underline(color: Color): StyledContent<D> {
 /**
  * Extension function to add an attribute on [StyledContent].
  */
-fun <D> StyledContent<D>.attribute(attr: Attribute): StyledContent<D> {
+fun StyledContent.attribute(attr: Attribute): StyledContent {
     val styled = stylize()
-    val style = styled.asMut()
-    style.attributes = style.attributes.set(attr)
+    val s = styled.asMut()
+    s.attributes = s.attributes.set(attr)
     return styled
 }
 
 /** Applies the [Attribute.Reset] attribute to the text. */
-fun <D> StyledContent<D>.reset(): StyledContent<D> = attribute(Attribute.Reset)
+fun StyledContent.reset(): StyledContent = attribute(Attribute.Reset)
 
 /** Applies the [Attribute.Bold] attribute to the text. */
-fun <D> StyledContent<D>.bold(): StyledContent<D> = attribute(Attribute.Bold)
+fun StyledContent.bold(): StyledContent = attribute(Attribute.Bold)
 
 /** Applies the [Attribute.Underlined] attribute to the text. */
-fun <D> StyledContent<D>.underlined(): StyledContent<D> = attribute(Attribute.Underlined)
+fun StyledContent.underlined(): StyledContent = attribute(Attribute.Underlined)
 
 /** Applies the [Attribute.Reverse] attribute to the text. */
-fun <D> StyledContent<D>.reverse(): StyledContent<D> = attribute(Attribute.Reverse)
+fun StyledContent.reverse(): StyledContent = attribute(Attribute.Reverse)
 
 /** Applies the [Attribute.Dim] attribute to the text. */
-fun <D> StyledContent<D>.dim(): StyledContent<D> = attribute(Attribute.Dim)
+fun StyledContent.dim(): StyledContent = attribute(Attribute.Dim)
 
 /** Applies the [Attribute.Italic] attribute to the text. */
-fun <D> StyledContent<D>.italic(): StyledContent<D> = attribute(Attribute.Italic)
+fun StyledContent.italic(): StyledContent = attribute(Attribute.Italic)
 
 /** Applies the [Attribute.Reverse] attribute to the text. (Alias for reverse) */
-fun <D> StyledContent<D>.negative(): StyledContent<D> = attribute(Attribute.Reverse)
+fun StyledContent.negative(): StyledContent = attribute(Attribute.Reverse)
 
 /** Applies the [Attribute.SlowBlink] attribute to the text. */
-fun <D> StyledContent<D>.slowBlink(): StyledContent<D> = attribute(Attribute.SlowBlink)
+fun StyledContent.slowBlink(): StyledContent = attribute(Attribute.SlowBlink)
 
 /** Applies the [Attribute.RapidBlink] attribute to the text. */
-fun <D> StyledContent<D>.rapidBlink(): StyledContent<D> = attribute(Attribute.RapidBlink)
+fun StyledContent.rapidBlink(): StyledContent = attribute(Attribute.RapidBlink)
 
 /** Applies the [Attribute.Hidden] attribute to the text. */
-fun <D> StyledContent<D>.hidden(): StyledContent<D> = attribute(Attribute.Hidden)
+fun StyledContent.hidden(): StyledContent = attribute(Attribute.Hidden)
 
 /** Applies the [Attribute.CrossedOut] attribute to the text. */
-fun <D> StyledContent<D>.crossedOut(): StyledContent<D> = attribute(Attribute.CrossedOut)
+fun StyledContent.crossedOut(): StyledContent = attribute(Attribute.CrossedOut)
 
 // Foreground color extension functions for StyledContent
 
 /** Sets the foreground color to [Color.Black]. */
-fun <D> StyledContent<D>.black(): StyledContent<D> = with(Color.Black)
+fun StyledContent.black(): StyledContent = with(Color.Black)
 
 /** Sets the foreground color to [Color.DarkGrey]. */
-fun <D> StyledContent<D>.darkGrey(): StyledContent<D> = with(Color.DarkGrey)
+fun StyledContent.darkGrey(): StyledContent = with(Color.DarkGrey)
 
 /** Sets the foreground color to [Color.Red]. */
-fun <D> StyledContent<D>.red(): StyledContent<D> = with(Color.Red)
+fun StyledContent.red(): StyledContent = with(Color.Red)
 
 /** Sets the foreground color to [Color.DarkRed]. */
-fun <D> StyledContent<D>.darkRed(): StyledContent<D> = with(Color.DarkRed)
+fun StyledContent.darkRed(): StyledContent = with(Color.DarkRed)
 
 /** Sets the foreground color to [Color.Green]. */
-fun <D> StyledContent<D>.green(): StyledContent<D> = with(Color.Green)
+fun StyledContent.green(): StyledContent = with(Color.Green)
 
 /** Sets the foreground color to [Color.DarkGreen]. */
-fun <D> StyledContent<D>.darkGreen(): StyledContent<D> = with(Color.DarkGreen)
+fun StyledContent.darkGreen(): StyledContent = with(Color.DarkGreen)
 
 /** Sets the foreground color to [Color.Yellow]. */
-fun <D> StyledContent<D>.yellow(): StyledContent<D> = with(Color.Yellow)
+fun StyledContent.yellow(): StyledContent = with(Color.Yellow)
 
 /** Sets the foreground color to [Color.DarkYellow]. */
-fun <D> StyledContent<D>.darkYellow(): StyledContent<D> = with(Color.DarkYellow)
+fun StyledContent.darkYellow(): StyledContent = with(Color.DarkYellow)
 
 /** Sets the foreground color to [Color.Blue]. */
-fun <D> StyledContent<D>.blue(): StyledContent<D> = with(Color.Blue)
+fun StyledContent.blue(): StyledContent = with(Color.Blue)
 
 /** Sets the foreground color to [Color.DarkBlue]. */
-fun <D> StyledContent<D>.darkBlue(): StyledContent<D> = with(Color.DarkBlue)
+fun StyledContent.darkBlue(): StyledContent = with(Color.DarkBlue)
 
 /** Sets the foreground color to [Color.Magenta]. */
-fun <D> StyledContent<D>.magenta(): StyledContent<D> = with(Color.Magenta)
+fun StyledContent.magenta(): StyledContent = with(Color.Magenta)
 
 /** Sets the foreground color to [Color.DarkMagenta]. */
-fun <D> StyledContent<D>.darkMagenta(): StyledContent<D> = with(Color.DarkMagenta)
+fun StyledContent.darkMagenta(): StyledContent = with(Color.DarkMagenta)
 
 /** Sets the foreground color to [Color.Cyan]. */
-fun <D> StyledContent<D>.cyan(): StyledContent<D> = with(Color.Cyan)
+fun StyledContent.cyan(): StyledContent = with(Color.Cyan)
 
 /** Sets the foreground color to [Color.DarkCyan]. */
-fun <D> StyledContent<D>.darkCyan(): StyledContent<D> = with(Color.DarkCyan)
+fun StyledContent.darkCyan(): StyledContent = with(Color.DarkCyan)
 
 /** Sets the foreground color to [Color.White]. */
-fun <D> StyledContent<D>.white(): StyledContent<D> = with(Color.White)
+fun StyledContent.white(): StyledContent = with(Color.White)
 
 /** Sets the foreground color to [Color.Grey]. */
-fun <D> StyledContent<D>.grey(): StyledContent<D> = with(Color.Grey)
+fun StyledContent.grey(): StyledContent = with(Color.Grey)
 
 // Background color extension functions for StyledContent
 
 /** Sets the background color to [Color.Black]. */
-fun <D> StyledContent<D>.onBlack(): StyledContent<D> = on(Color.Black)
+fun StyledContent.onBlack(): StyledContent = on(Color.Black)
 
 /** Sets the background color to [Color.DarkGrey]. */
-fun <D> StyledContent<D>.onDarkGrey(): StyledContent<D> = on(Color.DarkGrey)
+fun StyledContent.onDarkGrey(): StyledContent = on(Color.DarkGrey)
 
 /** Sets the background color to [Color.Red]. */
-fun <D> StyledContent<D>.onRed(): StyledContent<D> = on(Color.Red)
+fun StyledContent.onRed(): StyledContent = on(Color.Red)
 
 /** Sets the background color to [Color.DarkRed]. */
-fun <D> StyledContent<D>.onDarkRed(): StyledContent<D> = on(Color.DarkRed)
+fun StyledContent.onDarkRed(): StyledContent = on(Color.DarkRed)
 
 /** Sets the background color to [Color.Green]. */
-fun <D> StyledContent<D>.onGreen(): StyledContent<D> = on(Color.Green)
+fun StyledContent.onGreen(): StyledContent = on(Color.Green)
 
 /** Sets the background color to [Color.DarkGreen]. */
-fun <D> StyledContent<D>.onDarkGreen(): StyledContent<D> = on(Color.DarkGreen)
+fun StyledContent.onDarkGreen(): StyledContent = on(Color.DarkGreen)
 
 /** Sets the background color to [Color.Yellow]. */
-fun <D> StyledContent<D>.onYellow(): StyledContent<D> = on(Color.Yellow)
+fun StyledContent.onYellow(): StyledContent = on(Color.Yellow)
 
 /** Sets the background color to [Color.DarkYellow]. */
-fun <D> StyledContent<D>.onDarkYellow(): StyledContent<D> = on(Color.DarkYellow)
+fun StyledContent.onDarkYellow(): StyledContent = on(Color.DarkYellow)
 
 /** Sets the background color to [Color.Blue]. */
-fun <D> StyledContent<D>.onBlue(): StyledContent<D> = on(Color.Blue)
+fun StyledContent.onBlue(): StyledContent = on(Color.Blue)
 
 /** Sets the background color to [Color.DarkBlue]. */
-fun <D> StyledContent<D>.onDarkBlue(): StyledContent<D> = on(Color.DarkBlue)
+fun StyledContent.onDarkBlue(): StyledContent = on(Color.DarkBlue)
 
 /** Sets the background color to [Color.Magenta]. */
-fun <D> StyledContent<D>.onMagenta(): StyledContent<D> = on(Color.Magenta)
+fun StyledContent.onMagenta(): StyledContent = on(Color.Magenta)
 
 /** Sets the background color to [Color.DarkMagenta]. */
-fun <D> StyledContent<D>.onDarkMagenta(): StyledContent<D> = on(Color.DarkMagenta)
+fun StyledContent.onDarkMagenta(): StyledContent = on(Color.DarkMagenta)
 
 /** Sets the background color to [Color.Cyan]. */
-fun <D> StyledContent<D>.onCyan(): StyledContent<D> = on(Color.Cyan)
+fun StyledContent.onCyan(): StyledContent = on(Color.Cyan)
 
 /** Sets the background color to [Color.DarkCyan]. */
-fun <D> StyledContent<D>.onDarkCyan(): StyledContent<D> = on(Color.DarkCyan)
+fun StyledContent.onDarkCyan(): StyledContent = on(Color.DarkCyan)
 
 /** Sets the background color to [Color.White]. */
-fun <D> StyledContent<D>.onWhite(): StyledContent<D> = on(Color.White)
+fun StyledContent.onWhite(): StyledContent = on(Color.White)
 
 /** Sets the background color to [Color.Grey]. */
-fun <D> StyledContent<D>.onGrey(): StyledContent<D> = on(Color.Grey)
+fun StyledContent.onGrey(): StyledContent = on(Color.Grey)
 
 // Underline color extension functions for StyledContent
 
 /** Sets the underline color to [Color.Black]. */
-fun <D> StyledContent<D>.underlineBlack(): StyledContent<D> = underline(Color.Black)
+fun StyledContent.underlineBlack(): StyledContent = underline(Color.Black)
 
 /** Sets the underline color to [Color.DarkGrey]. */
-fun <D> StyledContent<D>.underlineDarkGrey(): StyledContent<D> = underline(Color.DarkGrey)
+fun StyledContent.underlineDarkGrey(): StyledContent = underline(Color.DarkGrey)
 
 /** Sets the underline color to [Color.Red]. */
-fun <D> StyledContent<D>.underlineRed(): StyledContent<D> = underline(Color.Red)
+fun StyledContent.underlineRed(): StyledContent = underline(Color.Red)
 
 /** Sets the underline color to [Color.DarkRed]. */
-fun <D> StyledContent<D>.underlineDarkRed(): StyledContent<D> = underline(Color.DarkRed)
+fun StyledContent.underlineDarkRed(): StyledContent = underline(Color.DarkRed)
 
 /** Sets the underline color to [Color.Green]. */
-fun <D> StyledContent<D>.underlineGreen(): StyledContent<D> = underline(Color.Green)
+fun StyledContent.underlineGreen(): StyledContent = underline(Color.Green)
 
 /** Sets the underline color to [Color.DarkGreen]. */
-fun <D> StyledContent<D>.underlineDarkGreen(): StyledContent<D> = underline(Color.DarkGreen)
+fun StyledContent.underlineDarkGreen(): StyledContent = underline(Color.DarkGreen)
 
 /** Sets the underline color to [Color.Yellow]. */
-fun <D> StyledContent<D>.underlineYellow(): StyledContent<D> = underline(Color.Yellow)
+fun StyledContent.underlineYellow(): StyledContent = underline(Color.Yellow)
 
 /** Sets the underline color to [Color.DarkYellow]. */
-fun <D> StyledContent<D>.underlineDarkYellow(): StyledContent<D> = underline(Color.DarkYellow)
+fun StyledContent.underlineDarkYellow(): StyledContent = underline(Color.DarkYellow)
 
 /** Sets the underline color to [Color.Blue]. */
-fun <D> StyledContent<D>.underlineBlue(): StyledContent<D> = underline(Color.Blue)
+fun StyledContent.underlineBlue(): StyledContent = underline(Color.Blue)
 
 /** Sets the underline color to [Color.DarkBlue]. */
-fun <D> StyledContent<D>.underlineDarkBlue(): StyledContent<D> = underline(Color.DarkBlue)
+fun StyledContent.underlineDarkBlue(): StyledContent = underline(Color.DarkBlue)
 
 /** Sets the underline color to [Color.Magenta]. */
-fun <D> StyledContent<D>.underlineMagenta(): StyledContent<D> = underline(Color.Magenta)
+fun StyledContent.underlineMagenta(): StyledContent = underline(Color.Magenta)
 
 /** Sets the underline color to [Color.DarkMagenta]. */
-fun <D> StyledContent<D>.underlineDarkMagenta(): StyledContent<D> = underline(Color.DarkMagenta)
+fun StyledContent.underlineDarkMagenta(): StyledContent = underline(Color.DarkMagenta)
 
 /** Sets the underline color to [Color.Cyan]. */
-fun <D> StyledContent<D>.underlineCyan(): StyledContent<D> = underline(Color.Cyan)
+fun StyledContent.underlineCyan(): StyledContent = underline(Color.Cyan)
 
 /** Sets the underline color to [Color.DarkCyan]. */
-fun <D> StyledContent<D>.underlineDarkCyan(): StyledContent<D> = underline(Color.DarkCyan)
+fun StyledContent.underlineDarkCyan(): StyledContent = underline(Color.DarkCyan)
 
 /** Sets the underline color to [Color.White]. */
-fun <D> StyledContent<D>.underlineWhite(): StyledContent<D> = underline(Color.White)
+fun StyledContent.underlineWhite(): StyledContent = underline(Color.White)
 
 /** Sets the underline color to [Color.Grey]. */
-fun <D> StyledContent<D>.underlineGrey(): StyledContent<D> = underline(Color.Grey)
+fun StyledContent.underlineGrey(): StyledContent = underline(Color.Grey)
 
 // ============================================================================
 // String Stylize Extensions
@@ -703,202 +460,202 @@ fun <D> StyledContent<D>.underlineGrey(): StyledContent<D> = underline(Color.Gre
 /**
  * Extension function to start styling a [String].
  */
-fun String.stylize(): StyledContent<String> = style(this)
+fun String.stylize(): StyledContent = style(this)
 
 /** Sets the foreground color on a [String]. */
-fun String.with(color: Color): StyledContent<String> = stylize().with(color)
+fun String.with(color: Color): StyledContent = stylize().with(color)
 
 /** Sets the background color on a [String]. */
-fun String.on(color: Color): StyledContent<String> = stylize().on(color)
+fun String.on(color: Color): StyledContent = stylize().on(color)
 
 /** Sets the underline color on a [String]. */
-fun String.underline(color: Color): StyledContent<String> = stylize().underline(color)
+fun String.underline(color: Color): StyledContent = stylize().underline(color)
 
 /** Adds an attribute to a [String]. */
-fun String.attribute(attr: Attribute): StyledContent<String> = stylize().attribute(attr)
+fun String.attribute(attr: Attribute): StyledContent = stylize().attribute(attr)
 
 /** Applies the [Attribute.Reset] attribute to the text. */
-fun String.reset(): StyledContent<String> = attribute(Attribute.Reset)
+fun String.reset(): StyledContent = attribute(Attribute.Reset)
 
 /** Applies the [Attribute.Bold] attribute to the text. */
-fun String.bold(): StyledContent<String> = attribute(Attribute.Bold)
+fun String.bold(): StyledContent = attribute(Attribute.Bold)
 
 /** Applies the [Attribute.Underlined] attribute to the text. */
-fun String.underlined(): StyledContent<String> = attribute(Attribute.Underlined)
+fun String.underlined(): StyledContent = attribute(Attribute.Underlined)
 
 /** Applies the [Attribute.Reverse] attribute to the text. */
-fun String.reverse(): StyledContent<String> = attribute(Attribute.Reverse)
+fun String.reverse(): StyledContent = attribute(Attribute.Reverse)
 
 /** Applies the [Attribute.Dim] attribute to the text. */
-fun String.dim(): StyledContent<String> = attribute(Attribute.Dim)
+fun String.dim(): StyledContent = attribute(Attribute.Dim)
 
 /** Applies the [Attribute.Italic] attribute to the text. */
-fun String.italic(): StyledContent<String> = attribute(Attribute.Italic)
+fun String.italic(): StyledContent = attribute(Attribute.Italic)
 
 /** Applies the [Attribute.Reverse] attribute to the text. (Alias for reverse) */
-fun String.negative(): StyledContent<String> = attribute(Attribute.Reverse)
+fun String.negative(): StyledContent = attribute(Attribute.Reverse)
 
 /** Applies the [Attribute.SlowBlink] attribute to the text. */
-fun String.slowBlink(): StyledContent<String> = attribute(Attribute.SlowBlink)
+fun String.slowBlink(): StyledContent = attribute(Attribute.SlowBlink)
 
 /** Applies the [Attribute.RapidBlink] attribute to the text. */
-fun String.rapidBlink(): StyledContent<String> = attribute(Attribute.RapidBlink)
+fun String.rapidBlink(): StyledContent = attribute(Attribute.RapidBlink)
 
 /** Applies the [Attribute.Hidden] attribute to the text. */
-fun String.hidden(): StyledContent<String> = attribute(Attribute.Hidden)
+fun String.hidden(): StyledContent = attribute(Attribute.Hidden)
 
 /** Applies the [Attribute.CrossedOut] attribute to the text. */
-fun String.crossedOut(): StyledContent<String> = attribute(Attribute.CrossedOut)
+fun String.crossedOut(): StyledContent = attribute(Attribute.CrossedOut)
 
 // Foreground color extension functions for String
 
 /** Sets the foreground color to [Color.Black]. */
-fun String.black(): StyledContent<String> = with(Color.Black)
+fun String.black(): StyledContent = with(Color.Black)
 
 /** Sets the foreground color to [Color.DarkGrey]. */
-fun String.darkGrey(): StyledContent<String> = with(Color.DarkGrey)
+fun String.darkGrey(): StyledContent = with(Color.DarkGrey)
 
 /** Sets the foreground color to [Color.Red]. */
-fun String.red(): StyledContent<String> = with(Color.Red)
+fun String.red(): StyledContent = with(Color.Red)
 
 /** Sets the foreground color to [Color.DarkRed]. */
-fun String.darkRed(): StyledContent<String> = with(Color.DarkRed)
+fun String.darkRed(): StyledContent = with(Color.DarkRed)
 
 /** Sets the foreground color to [Color.Green]. */
-fun String.green(): StyledContent<String> = with(Color.Green)
+fun String.green(): StyledContent = with(Color.Green)
 
 /** Sets the foreground color to [Color.DarkGreen]. */
-fun String.darkGreen(): StyledContent<String> = with(Color.DarkGreen)
+fun String.darkGreen(): StyledContent = with(Color.DarkGreen)
 
 /** Sets the foreground color to [Color.Yellow]. */
-fun String.yellow(): StyledContent<String> = with(Color.Yellow)
+fun String.yellow(): StyledContent = with(Color.Yellow)
 
 /** Sets the foreground color to [Color.DarkYellow]. */
-fun String.darkYellow(): StyledContent<String> = with(Color.DarkYellow)
+fun String.darkYellow(): StyledContent = with(Color.DarkYellow)
 
 /** Sets the foreground color to [Color.Blue]. */
-fun String.blue(): StyledContent<String> = with(Color.Blue)
+fun String.blue(): StyledContent = with(Color.Blue)
 
 /** Sets the foreground color to [Color.DarkBlue]. */
-fun String.darkBlue(): StyledContent<String> = with(Color.DarkBlue)
+fun String.darkBlue(): StyledContent = with(Color.DarkBlue)
 
 /** Sets the foreground color to [Color.Magenta]. */
-fun String.magenta(): StyledContent<String> = with(Color.Magenta)
+fun String.magenta(): StyledContent = with(Color.Magenta)
 
 /** Sets the foreground color to [Color.DarkMagenta]. */
-fun String.darkMagenta(): StyledContent<String> = with(Color.DarkMagenta)
+fun String.darkMagenta(): StyledContent = with(Color.DarkMagenta)
 
 /** Sets the foreground color to [Color.Cyan]. */
-fun String.cyan(): StyledContent<String> = with(Color.Cyan)
+fun String.cyan(): StyledContent = with(Color.Cyan)
 
 /** Sets the foreground color to [Color.DarkCyan]. */
-fun String.darkCyan(): StyledContent<String> = with(Color.DarkCyan)
+fun String.darkCyan(): StyledContent = with(Color.DarkCyan)
 
 /** Sets the foreground color to [Color.White]. */
-fun String.white(): StyledContent<String> = with(Color.White)
+fun String.white(): StyledContent = with(Color.White)
 
 /** Sets the foreground color to [Color.Grey]. */
-fun String.grey(): StyledContent<String> = with(Color.Grey)
+fun String.grey(): StyledContent = with(Color.Grey)
 
 // Background color extension functions for String
 
 /** Sets the background color to [Color.Black]. */
-fun String.onBlack(): StyledContent<String> = on(Color.Black)
+fun String.onBlack(): StyledContent = on(Color.Black)
 
 /** Sets the background color to [Color.DarkGrey]. */
-fun String.onDarkGrey(): StyledContent<String> = on(Color.DarkGrey)
+fun String.onDarkGrey(): StyledContent = on(Color.DarkGrey)
 
 /** Sets the background color to [Color.Red]. */
-fun String.onRed(): StyledContent<String> = on(Color.Red)
+fun String.onRed(): StyledContent = on(Color.Red)
 
 /** Sets the background color to [Color.DarkRed]. */
-fun String.onDarkRed(): StyledContent<String> = on(Color.DarkRed)
+fun String.onDarkRed(): StyledContent = on(Color.DarkRed)
 
 /** Sets the background color to [Color.Green]. */
-fun String.onGreen(): StyledContent<String> = on(Color.Green)
+fun String.onGreen(): StyledContent = on(Color.Green)
 
 /** Sets the background color to [Color.DarkGreen]. */
-fun String.onDarkGreen(): StyledContent<String> = on(Color.DarkGreen)
+fun String.onDarkGreen(): StyledContent = on(Color.DarkGreen)
 
 /** Sets the background color to [Color.Yellow]. */
-fun String.onYellow(): StyledContent<String> = on(Color.Yellow)
+fun String.onYellow(): StyledContent = on(Color.Yellow)
 
 /** Sets the background color to [Color.DarkYellow]. */
-fun String.onDarkYellow(): StyledContent<String> = on(Color.DarkYellow)
+fun String.onDarkYellow(): StyledContent = on(Color.DarkYellow)
 
 /** Sets the background color to [Color.Blue]. */
-fun String.onBlue(): StyledContent<String> = on(Color.Blue)
+fun String.onBlue(): StyledContent = on(Color.Blue)
 
 /** Sets the background color to [Color.DarkBlue]. */
-fun String.onDarkBlue(): StyledContent<String> = on(Color.DarkBlue)
+fun String.onDarkBlue(): StyledContent = on(Color.DarkBlue)
 
 /** Sets the background color to [Color.Magenta]. */
-fun String.onMagenta(): StyledContent<String> = on(Color.Magenta)
+fun String.onMagenta(): StyledContent = on(Color.Magenta)
 
 /** Sets the background color to [Color.DarkMagenta]. */
-fun String.onDarkMagenta(): StyledContent<String> = on(Color.DarkMagenta)
+fun String.onDarkMagenta(): StyledContent = on(Color.DarkMagenta)
 
 /** Sets the background color to [Color.Cyan]. */
-fun String.onCyan(): StyledContent<String> = on(Color.Cyan)
+fun String.onCyan(): StyledContent = on(Color.Cyan)
 
 /** Sets the background color to [Color.DarkCyan]. */
-fun String.onDarkCyan(): StyledContent<String> = on(Color.DarkCyan)
+fun String.onDarkCyan(): StyledContent = on(Color.DarkCyan)
 
 /** Sets the background color to [Color.White]. */
-fun String.onWhite(): StyledContent<String> = on(Color.White)
+fun String.onWhite(): StyledContent = on(Color.White)
 
 /** Sets the background color to [Color.Grey]. */
-fun String.onGrey(): StyledContent<String> = on(Color.Grey)
+fun String.onGrey(): StyledContent = on(Color.Grey)
 
 // Underline color extension functions for String
 
 /** Sets the underline color to [Color.Black]. */
-fun String.underlineBlack(): StyledContent<String> = underline(Color.Black)
+fun String.underlineBlack(): StyledContent = underline(Color.Black)
 
 /** Sets the underline color to [Color.DarkGrey]. */
-fun String.underlineDarkGrey(): StyledContent<String> = underline(Color.DarkGrey)
+fun String.underlineDarkGrey(): StyledContent = underline(Color.DarkGrey)
 
 /** Sets the underline color to [Color.Red]. */
-fun String.underlineRed(): StyledContent<String> = underline(Color.Red)
+fun String.underlineRed(): StyledContent = underline(Color.Red)
 
 /** Sets the underline color to [Color.DarkRed]. */
-fun String.underlineDarkRed(): StyledContent<String> = underline(Color.DarkRed)
+fun String.underlineDarkRed(): StyledContent = underline(Color.DarkRed)
 
 /** Sets the underline color to [Color.Green]. */
-fun String.underlineGreen(): StyledContent<String> = underline(Color.Green)
+fun String.underlineGreen(): StyledContent = underline(Color.Green)
 
 /** Sets the underline color to [Color.DarkGreen]. */
-fun String.underlineDarkGreen(): StyledContent<String> = underline(Color.DarkGreen)
+fun String.underlineDarkGreen(): StyledContent = underline(Color.DarkGreen)
 
 /** Sets the underline color to [Color.Yellow]. */
-fun String.underlineYellow(): StyledContent<String> = underline(Color.Yellow)
+fun String.underlineYellow(): StyledContent = underline(Color.Yellow)
 
 /** Sets the underline color to [Color.DarkYellow]. */
-fun String.underlineDarkYellow(): StyledContent<String> = underline(Color.DarkYellow)
+fun String.underlineDarkYellow(): StyledContent = underline(Color.DarkYellow)
 
 /** Sets the underline color to [Color.Blue]. */
-fun String.underlineBlue(): StyledContent<String> = underline(Color.Blue)
+fun String.underlineBlue(): StyledContent = underline(Color.Blue)
 
 /** Sets the underline color to [Color.DarkBlue]. */
-fun String.underlineDarkBlue(): StyledContent<String> = underline(Color.DarkBlue)
+fun String.underlineDarkBlue(): StyledContent = underline(Color.DarkBlue)
 
 /** Sets the underline color to [Color.Magenta]. */
-fun String.underlineMagenta(): StyledContent<String> = underline(Color.Magenta)
+fun String.underlineMagenta(): StyledContent = underline(Color.Magenta)
 
 /** Sets the underline color to [Color.DarkMagenta]. */
-fun String.underlineDarkMagenta(): StyledContent<String> = underline(Color.DarkMagenta)
+fun String.underlineDarkMagenta(): StyledContent = underline(Color.DarkMagenta)
 
 /** Sets the underline color to [Color.Cyan]. */
-fun String.underlineCyan(): StyledContent<String> = underline(Color.Cyan)
+fun String.underlineCyan(): StyledContent = underline(Color.Cyan)
 
 /** Sets the underline color to [Color.DarkCyan]. */
-fun String.underlineDarkCyan(): StyledContent<String> = underline(Color.DarkCyan)
+fun String.underlineDarkCyan(): StyledContent = underline(Color.DarkCyan)
 
 /** Sets the underline color to [Color.White]. */
-fun String.underlineWhite(): StyledContent<String> = underline(Color.White)
+fun String.underlineWhite(): StyledContent = underline(Color.White)
 
 /** Sets the underline color to [Color.Grey]. */
-fun String.underlineGrey(): StyledContent<String> = underline(Color.Grey)
+fun String.underlineGrey(): StyledContent = underline(Color.Grey)
 
 // ============================================================================
 // Char Stylize Extensions
@@ -907,58 +664,58 @@ fun String.underlineGrey(): StyledContent<String> = underline(Color.Grey)
 /**
  * Extension function to start styling a [Char].
  */
-fun Char.stylize(): StyledContent<Char> = style(this)
+fun Char.stylize(): StyledContent = style(this.toString())
 
 /** Sets the foreground color on a [Char]. */
-fun Char.with(color: Color): StyledContent<Char> = stylize().with(color)
+fun Char.with(color: Color): StyledContent = stylize().with(color)
 
 /** Sets the background color on a [Char]. */
-fun Char.on(color: Color): StyledContent<Char> = stylize().on(color)
+fun Char.on(color: Color): StyledContent = stylize().on(color)
 
 /** Sets the underline color on a [Char]. */
-fun Char.underline(color: Color): StyledContent<Char> = stylize().underline(color)
+fun Char.underline(color: Color): StyledContent = stylize().underline(color)
 
 /** Adds an attribute to a [Char]. */
-fun Char.attribute(attr: Attribute): StyledContent<Char> = stylize().attribute(attr)
+fun Char.attribute(attr: Attribute): StyledContent = stylize().attribute(attr)
 
 /** Applies the [Attribute.Bold] attribute to the char. */
-fun Char.bold(): StyledContent<Char> = attribute(Attribute.Bold)
+fun Char.bold(): StyledContent = attribute(Attribute.Bold)
 
 /** Applies the [Attribute.Underlined] attribute to the char. */
-fun Char.underlined(): StyledContent<Char> = attribute(Attribute.Underlined)
+fun Char.underlined(): StyledContent = attribute(Attribute.Underlined)
 
 /** Applies the [Attribute.Reverse] attribute to the char. */
-fun Char.reverse(): StyledContent<Char> = attribute(Attribute.Reverse)
+fun Char.reverse(): StyledContent = attribute(Attribute.Reverse)
 
 /** Applies the [Attribute.Dim] attribute to the char. */
-fun Char.dim(): StyledContent<Char> = attribute(Attribute.Dim)
+fun Char.dim(): StyledContent = attribute(Attribute.Dim)
 
 /** Applies the [Attribute.Italic] attribute to the char. */
-fun Char.italic(): StyledContent<Char> = attribute(Attribute.Italic)
+fun Char.italic(): StyledContent = attribute(Attribute.Italic)
 
 /** Applies the [Attribute.Reverse] attribute to the char. (Alias for reverse) */
-fun Char.negative(): StyledContent<Char> = attribute(Attribute.Reverse)
+fun Char.negative(): StyledContent = attribute(Attribute.Reverse)
 
 /** Sets the foreground color to [Color.Red]. */
-fun Char.red(): StyledContent<Char> = with(Color.Red)
+fun Char.red(): StyledContent = with(Color.Red)
 
 /** Sets the foreground color to [Color.Green]. */
-fun Char.green(): StyledContent<Char> = with(Color.Green)
+fun Char.green(): StyledContent = with(Color.Green)
 
 /** Sets the foreground color to [Color.Blue]. */
-fun Char.blue(): StyledContent<Char> = with(Color.Blue)
+fun Char.blue(): StyledContent = with(Color.Blue)
 
 /** Sets the foreground color to [Color.Yellow]. */
-fun Char.yellow(): StyledContent<Char> = with(Color.Yellow)
+fun Char.yellow(): StyledContent = with(Color.Yellow)
 
 /** Sets the foreground color to [Color.Magenta]. */
-fun Char.magenta(): StyledContent<Char> = with(Color.Magenta)
+fun Char.magenta(): StyledContent = with(Color.Magenta)
 
 /** Sets the foreground color to [Color.Cyan]. */
-fun Char.cyan(): StyledContent<Char> = with(Color.Cyan)
+fun Char.cyan(): StyledContent = with(Color.Cyan)
 
 /** Sets the foreground color to [Color.White]. */
-fun Char.white(): StyledContent<Char> = with(Color.White)
+fun Char.white(): StyledContent = with(Color.White)
 
 /** Sets the foreground color to [Color.Black]. */
-fun Char.black(): StyledContent<Char> = with(Color.Black)
+fun Char.black(): StyledContent = with(Color.Black)
