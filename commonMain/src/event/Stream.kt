@@ -1,5 +1,4 @@
 // port-lint: source event/stream.rs
-@file:OptIn(kotlin.experimental.ExperimentalObjCRefinement::class)
 
 package io.github.kotlinmania.crossterm.event
 
@@ -14,7 +13,6 @@ import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlin.native.HiddenFromObjC
 import kotlin.time.Duration
 
 /**
@@ -34,10 +32,9 @@ import kotlin.time.Duration
  *
  * // Collect events from the stream
  * eventStream().collect { result ->
- *     result.onSuccess { event ->
- *         println("Received event: $event")
- *     }.onFailure { error ->
- *         println("Error: $error")
+ *     when (result) {
+ *         is EventResult.Ok -> println("Received event: ${result.event}")
+ *         is EventResult.Err -> println("Error: ${result.error}")
  *     }
  * }
  * ```
@@ -79,10 +76,10 @@ class EventStream private constructor() {
     }
 
     /**
-     * Returns this event stream as a [Flow] of [Result]<[Event]>.
+     * Returns this event stream as a [Flow] of [EventResult].
      *
      * The flow will emit events as they become available from the terminal.
-     * Each emission is wrapped in a [Result] to handle potential I/O errors.
+     * Each emission is wrapped in an [EventResult] to handle potential I/O errors.
      *
      * The flow is cold - collection only starts when a terminal operator
      * (like `collect`) is called. Multiple collectors will each receive
@@ -93,10 +90,9 @@ class EventStream private constructor() {
      * - An unrecoverable error occurs
      * - The collecting coroutine is cancelled
      *
-     * @return A [Flow] that emits [Result]<[Event]> values.
+     * @return A [Flow] that emits [EventResult] values.
      */
-    @HiddenFromObjC
-    fun asFlow(): Flow<Result<Event>> = callbackFlow {
+    fun asFlow(): Flow<EventResult> = callbackFlow {
         // Initialize the waker from the event reader
         pollInternalWaker = try {
             lockEventReader { reader -> reader.waker() }
@@ -121,7 +117,7 @@ class EventStream private constructor() {
                         // Extract the public event from the internal event wrapper
                         when (internalEvent) {
                             is InternalEvent.Event -> {
-                                send(Result.success(internalEvent.event))
+                                send(EventResult.Ok(internalEvent.event))
                             }
                             // Other internal events are not exposed publicly
                             else -> {
@@ -143,7 +139,7 @@ class EventStream private constructor() {
                         continue
                     }
                     // Emit the error and continue
-                    send(Result.failure(e))
+                    send(EventResult.Err(EventError(e.message ?: "Unknown error", e.cause?.message)))
                 }
             }
         }
@@ -206,16 +202,16 @@ private val POLL_TIMEOUT = Duration.parse("PT0.1S") // 100ms
  *
  * // Collect the first 10 events
  * eventStream().take(10).collect { result ->
- *     result.onSuccess { event ->
- *         println("Event: $event")
+ *     when (result) {
+ *         is EventResult.Ok -> println("Event: ${result.event}")
+ *         is EventResult.Err -> println("Error: ${result.error}")
  *     }
  * }
  * ```
  *
- * @return A [Flow] that emits [Result]<[Event]> values.
+ * @return A [Flow] that emits [EventResult] values.
  */
-@HiddenFromObjC
-fun eventStream(): Flow<Result<Event>> = EventStream.new().asFlow()
+fun eventStream(): Flow<EventResult> = EventStream.new().asFlow()
 
 /**
  * Reads events from the terminal as a flow, mapping successful events.
@@ -241,12 +237,11 @@ fun eventStream(): Flow<Result<Event>> = EventStream.new().asFlow()
  *
  * @return A [Flow] that emits [Event] values, filtering out errors.
  */
-@HiddenFromObjC
 suspend fun events(): Flow<Event> = withContext(Dispatchers.Default) {
     kotlinx.coroutines.flow.flow {
         eventStream().collect { result ->
-            result.onSuccess { event ->
-                emit(event)
+            if (result is EventResult.Ok) {
+                emit(result.event)
             }
         }
     }

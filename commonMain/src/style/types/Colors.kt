@@ -1,9 +1,6 @@
 // port-lint: source style/types/colors.rs
-@file:OptIn(kotlin.experimental.ExperimentalObjCRefinement::class)
 
 package io.github.kotlinmania.crossterm.style.types
-
-import kotlin.native.HiddenFromObjC
 
 /**
  * Represents, optionally, a foreground and/or a background color.
@@ -93,18 +90,5 @@ data class Colors(
             }
         }
 
-        /**
-         * Creates a [Colors] from a pair of colors in the order (foreground, background).
-         *
-         * @param colors A pair of (foreground, background) colors
-         * @return A [Colors] with both colors set
-         */
-        @HiddenFromObjC
-        fun from(colors: Pair<Color, Color>): Colors {
-            return Colors(
-                foreground = colors.first,
-                background = colors.second
-            )
-        }
     }
 }

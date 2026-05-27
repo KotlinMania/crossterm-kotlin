@@ -1,32 +1,29 @@
 // port-lint: source style/styled_content.rs
-@file:OptIn(kotlin.experimental.ExperimentalObjCRefinement::class)
 
 package io.github.kotlinmania.crossterm.style
 
 import io.github.kotlinmania.crossterm.executeFmt
-import kotlin.native.HiddenFromObjC
 
 /**
  * The style with the content to be styled.
  */
-@HiddenFromObjC
-data class StyledContent<D>(
+data class StyledContent(
     /** The style (colors, content attributes). */
     private var style: ContentStyle,
-    /** A content to apply the style on. */
-    private val content: D
+    /** The content to apply the style on, stored as its string representation. */
+    private val content: String
 ) {
     companion object {
         /**
          * Creates a new [StyledContent].
          */
-        fun <D> new(style: ContentStyle, content: D): StyledContent<D> = StyledContent(style, content)
+        fun new(style: ContentStyle, content: String): StyledContent = StyledContent(style, content)
     }
 
     /**
      * Returns the content.
      */
-    fun content(): D = content
+    fun content(): String = content
 
     /**
      * Returns the style.
