@@ -289,7 +289,7 @@ kotlin {
             kotlin.srcDir("commonMain/src")
             dependencies {
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0")
-                implementation("org.jetbrains.kotlinx:atomicfu:0.32.1")
+                implementation("org.jetbrains.kotlinx:atomicfu:0.33.0")
             }
         }
         val commonTest by getting {
