@@ -3,6 +3,8 @@ import PackageDescription
 
 let package = Package(
     name: "SwiftTestHarness",
+    // SWIFT.md gap #9d: the coroutine bridge needs Swift Concurrency (macOS 10.15+).
+    platforms: [.macOS(.v14)],
     dependencies: [
         .package(name: "Crossterm", path: "../build/SPMPackage/macosArm64/Debug")
     ],

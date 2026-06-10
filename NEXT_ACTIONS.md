@@ -5,11 +5,11 @@ Based on AST analysis, here are the concrete next steps.
 ## Summary
 
 - **Files Present:** 26/66 (39.4%)
-- **Function parity:** 105/493 matched (target 506) — 21.3%
-- **Class/type parity:** 82/115 matched (target 159) — 71.3%
-- **Combined symbol parity:** 187/608 matched (target 665) — 30.8%
+- **Function parity:** 105/493 matched (target 445) — 21.3%
+- **Class/type parity:** 81/115 matched (target 162) — 70.4%
+- **Combined symbol parity:** 186/608 matched (target 607) — 30.6%
 - **Average inline-code cosine:** 0.30 (function body across 26 matched files)
-- **Average documentation cosine:** 0.59 (doc text across 26 matched files)
+- **Average documentation cosine:** 0.56 (doc text across 26 matched files)
 - **Cheat-zeroed Files:** 9
 - **Critical Issues:** 21 files with <0.60 function similarity
 
@@ -27,9 +27,9 @@ No missing high-value files detected.
 
 Every matched file is listed below with function and type symbol parity.
 
-### 1. crossterm-rs.command
+### 1. command
 
-- **Target:** `Command [PROVENANCE-FALLBACK]`
+- **Target:** `crossterm.Command [PROVENANCE-FALLBACK]`
 - **Similarity:** 0.50
 - **Dependents:** 2
 - **Priority Score:** 2031405.0
@@ -41,7 +41,7 @@ Every matched file is listed below with function and type symbol parity.
 - **Proposed provenance header:** `// port-lint: source command.rs` (current: `// port-lint: source command.rs`)
 - **Lint issues:** 1
 
-### 2. crossterm-rs.event
+### 2. event
 
 - **Target:** `event.Event [PROVENANCE-FALLBACK]`
 - **Similarity:** 0.35
@@ -56,9 +56,9 @@ Every matched file is listed below with function and type symbol parity.
 - **Proposed provenance header:** `// port-lint: source event.rs` (current: `// port-lint: source event.rs`)
 - **Lint issues:** 1
 
-### 3. crossterm-rs.clipboard
+### 3. clipboard
 
-- **Target:** `Clipboard [ZERO] [PROVENANCE-FALLBACK]`
+- **Target:** `crossterm.Clipboard [ZERO] [PROVENANCE-FALLBACK]`
 - **Similarity:** 0.00
 - **Dependents:** 1
 - **Priority Score:** 1091610.0
@@ -87,7 +87,7 @@ Every matched file is listed below with function and type symbol parity.
 
 ### 5. event.read
 
-- **Target:** `event.Read [PROVENANCE-FALLBACK]`
+- **Target:** `event.InternalEventReader [PROVENANCE-FALLBACK]`
 - **Similarity:** 0.13
 - **Dependents:** 0
 - **Priority Score:** 212708.8
@@ -132,7 +132,7 @@ Every matched file is listed below with function and type symbol parity.
 - **Proposed provenance header:** `// port-lint: source style/types/colored.rs` (current: `// port-lint: source style/types/colored.rs`)
 - **Lint issues:** 2
 
-### 8. crossterm-rs.style
+### 8. style
 
 - **Target:** `style.Style [PROVENANCE-FALLBACK]`
 - **Similarity:** 0.28
@@ -147,12 +147,12 @@ Every matched file is listed below with function and type symbol parity.
 - **Proposed provenance header:** `// port-lint: source style.rs` (current: `// port-lint: source style.rs`)
 - **Lint issues:** 1
 
-### 9. crossterm-rs.cursor
+### 9. cursor
 
 - **Target:** `cursor.Cursor [PROVENANCE-FALLBACK]`
-- **Similarity:** 0.30
+- **Similarity:** 0.29
 - **Dependents:** 0
-- **Priority Score:** 62407.0
+- **Priority Score:** 62407.1
 - **Functions:** 2/8 matched (target 29)
 - **Missing functions:** `test_move_to`, `test_move_right`, `test_move_left`, `test_move_up`, `test_move_down`, `test_save_restore_position`
 - **Types:** 16/16 matched
@@ -194,7 +194,7 @@ Every matched file is listed below with function and type symbol parity.
 
 ### 12. event.timeout
 
-- **Target:** `event.Timeout [PROVENANCE-FALLBACK]`
+- **Target:** `event.PollTimeout [PROVENANCE-FALLBACK]`
 - **Similarity:** 0.28
 - **Dependents:** 0
 - **Priority Score:** 50907.2
@@ -215,13 +215,15 @@ Every matched file is listed below with function and type symbol parity.
 - **Priority Score:** 50710.0
 - **Functions:** 1/4 matched (target 5)
 - **Missing functions:** `default`, `poll_next`, `drop`
-- **Types:** 1/3 matched (target 1)
+- **Types:** 1/3 matched (target 5)
 - **Missing types:** `Task`, `Item`
 - **Provenance warning:** port-lint provenance header matched only after fallback normalization: `event/stream.rs` vs expected `event/stream.rs`
+- **Provenance warning:** port-lint provenance header matched only after fallback normalization: `event/stream.rs` vs expected `event/stream.rs`
 - **Proposed provenance header:** `// port-lint: source event/stream.rs` (current: `// port-lint: source event/stream.rs`)
-- **Lint issues:** 1
+- **Proposed provenance header:** `// port-lint: source event/stream.rs` (current: `// port-lint: source event/stream.rs`)
+- **Lint issues:** 2
 
-### 14. crossterm-rs.terminal
+### 14. terminal
 
 - **Target:** `terminal.Terminal [PROVENANCE-FALLBACK]`
 - **Similarity:** 0.23
@@ -239,13 +241,13 @@ Every matched file is listed below with function and type symbol parity.
 ### 15. style.stylize
 
 - **Target:** `style.Stylize [PROVENANCE-FALLBACK]`
-- **Similarity:** 0.79
+- **Similarity:** 0.70
 - **Dependents:** 0
-- **Priority Score:** 20802.1
-- **Functions:** 5/6 matched (target 270)
+- **Priority Score:** 30803.0
+- **Functions:** 5/6 matched (target 210)
 - **Missing functions:** `set_fg_bg_add_attr`
-- **Types:** 1/2 matched (target 1)
-- **Missing types:** `Styled`
+- **Types:** 0/2 matched (target 0)
+- **Missing types:** `Stylize`, `Styled`
 - **Tests:** 0/1 matched
 - **Provenance warning:** port-lint provenance header matched only after fallback normalization: `style/stylize.rs` vs expected `style/stylize.rs`
 - **Proposed provenance header:** `// port-lint: source style/stylize.rs` (current: `// port-lint: source style/stylize.rs`)
@@ -267,7 +269,7 @@ Every matched file is listed below with function and type symbol parity.
 
 ### 17. style.styled_content
 
-- **Target:** `style.StyledContentImpl [PROVENANCE-FALLBACK]`
+- **Target:** `style.StyledContent [PROVENANCE-FALLBACK]`
 - **Similarity:** 0.81
 - **Dependents:** 0
 - **Priority Score:** 10801.9
@@ -282,10 +284,10 @@ Every matched file is listed below with function and type symbol parity.
 ### 18. types.colors
 
 - **Target:** `types.Colors [PROVENANCE-FALLBACK]`
-- **Similarity:** 0.66
+- **Similarity:** 0.65
 - **Dependents:** 0
-- **Priority Score:** 10503.4
-- **Functions:** 3/4 matched
+- **Priority Score:** 10503.5
+- **Functions:** 3/4 matched (target 3)
 - **Missing functions:** `test_colors_then`
 - **Types:** 1/1 matched
 - **Missing types:** _none_
@@ -294,9 +296,9 @@ Every matched file is listed below with function and type symbol parity.
 - **Proposed provenance header:** `// port-lint: source style/types/colors.rs` (current: `// port-lint: source style/types/colors.rs`)
 - **Lint issues:** 1
 
-### 19. crossterm-rs.ansi_support
+### 19. ansi_support
 
-- **Target:** `AnsiSupport [PROVENANCE-FALLBACK]`
+- **Target:** `crossterm.AnsiSupport [PROVENANCE-FALLBACK]`
 - **Similarity:** 0.19
 - **Dependents:** 0
 - **Priority Score:** 10208.1
@@ -322,9 +324,9 @@ Every matched file is listed below with function and type symbol parity.
 - **Proposed provenance header:** `// port-lint: source event/internal.rs` (current: `// port-lint: source event/internal.rs`)
 - **Lint issues:** 1
 
-### 21. crossterm-rs.tty
+### 21. tty
 
-- **Target:** `Tty [PROVENANCE-FALLBACK]`
+- **Target:** `crossterm.Tty [PROVENANCE-FALLBACK]`
 - **Similarity:** 0.18
 - **Dependents:** 0
 - **Priority Score:** 208.2
@@ -338,7 +340,7 @@ Every matched file is listed below with function and type symbol parity.
 
 ### 22. event.source
 
-- **Target:** `source.Source [ZERO] [PROVENANCE-FALLBACK]`
+- **Target:** `source.EventSource [ZERO] [PROVENANCE-FALLBACK]`
 - **Similarity:** 0.00
 - **Dependents:** 0
 - **Priority Score:** 110.0
@@ -350,7 +352,21 @@ Every matched file is listed below with function and type symbol parity.
 - **Proposed provenance header:** `// port-lint: source event/source.rs` (current: `// port-lint: source event/source.rs`)
 - **Lint issues:** 1
 
-### 23. event.sys
+### 23. interactive-demo.macros
+
+- **Target:** `crossterm.Macros [ZERO] [PROVENANCE-FALLBACK]`
+- **Similarity:** 0.00
+- **Dependents:** 0
+- **Priority Score:** 10.0
+- **Functions:** 0/0 matched (target 5)
+- **Missing functions:** _none_
+- **Types:** 0/0 matched
+- **Missing types:** _none_
+- **Provenance warning:** port-lint provenance header matched only after fallback normalization: `macros.rs` vs expected `macros.rs`
+- **Proposed provenance header:** `// port-lint: source macros.rs` (current: `// port-lint: source macros.rs`)
+- **Lint issues:** 1
+
+### 24. event.sys
 
 - **Target:** `sys.Waker [ZERO] [PROVENANCE-FALLBACK]`
 - **Similarity:** 0.00
@@ -364,23 +380,9 @@ Every matched file is listed below with function and type symbol parity.
 - **Proposed provenance header:** `// port-lint: source event/sys.rs` (current: `// port-lint: source event/sys.rs`)
 - **Lint issues:** 1
 
-### 24. interactive-demo.macros
-
-- **Target:** `Macros [ZERO] [PROVENANCE-FALLBACK]`
-- **Similarity:** 0.00
-- **Dependents:** 0
-- **Priority Score:** 10.0
-- **Functions:** 0/0 matched (target 5)
-- **Missing functions:** _none_
-- **Types:** 0/0 matched
-- **Missing types:** _none_
-- **Provenance warning:** port-lint provenance header matched only after fallback normalization: `macros.rs` vs expected `macros.rs`
-- **Proposed provenance header:** `// port-lint: source macros.rs` (current: `// port-lint: source macros.rs`)
-- **Lint issues:** 1
-
 ### 25. terminal.sys
 
-- **Target:** `terminal.sys.Sys [PROVENANCE-FALLBACK]`
+- **Target:** `kotlin.io.github.kotlinmania.crossterm.terminal.sys.Sys [PROVENANCE-FALLBACK]`
 - **Similarity:** 1.00
 - **Dependents:** 0
 - **Priority Score:** 0.0
@@ -426,5 +428,5 @@ do not treat them as the next implementation target by default.
 
 | Source | Expected target | Deps | Source path | Expected path |
 |--------|-----------------|------|-------------|---------------|
-| `crossterm-rs.lib` | `crosstermrs.src.Lib` | 0 | `crossterm-rs/src/lib.rs` | `crosstermrs/src/Lib.kt` |
+| `lib` | `Lib` | 0 | `src/lib.rs` | `Lib.kt` |
 
